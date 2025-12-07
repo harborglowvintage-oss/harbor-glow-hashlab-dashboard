@@ -1,0 +1,19 @@
+/* Digital-7 Font Styles */
+@font-face {
+    font-family: 'Digital-7';
+    src: local('Courier New'), local('Courier'), monospace;
+    font-weight: normal;
+    font-style: normal;
+}
+
+.digital-display {
+    font-family: 'Digital-7', 'Courier New', monospace;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    text-shadow: 
+        0 0 5px var(--neon-green),
+        0 0 10px var(--neon-green),
+        0 0 15px var(--neon-green),
+        0 0 20px var(--neon-green-bright);
+    color: var(--neon-green-bright);
+}
