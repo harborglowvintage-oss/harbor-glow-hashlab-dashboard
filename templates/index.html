@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/digital7.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="logo">
+                <div class="glow-text">HARBOR GLOW</div>
+                <div class="subtitle">HashLab Mining Dashboard</div>
+            </div>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <main class="dashboard-grid">
+            <!-- Hashrate Card -->
+            <div class="card card-large">
+                <div class="card-header">
+                    <h2>HASHRATE</h2>
+                    <div class="card-icon">⚡</div>
+                </div>
+                <div class="card-body">
+                    <div class="metric-large digital-display">
+                        <span id="hashrate">0.0</span>
+                        <span class="unit">TH/s</span>
+                    </div>
+                    <div class="metric-chart">
+                        <canvas id="hashrateChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Temperature Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>TEMPERATURE</h2>
+                    <div class="card-icon">🌡️</div>
+                </div>
+                <div class="card-body">
+                    <div class="metric-medium digital-display">
+                        <span id="temperature">0.0</span>
+                        <span class="unit">°C</span>
+                    </div>
+                    <div class="temp-gauge" id="tempGauge">
+                        <div class="gauge-fill" id="tempGaugeFill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Power Usage Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>POWER</h2>
+                    <div class="card-icon">🔋</div>
+                </div>
+                <div class="card-body">
+                    <div class="metric-medium digital-display">
+                        <span id="power">0</span>
+                        <span class="unit">W</span>
+                    </div>
+                    <div class="efficiency-bar">
+                        <div class="efficiency-fill" id="efficiencyFill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shares Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>SHARES</h2>
+                    <div class="card-icon">📊</div>
+                </div>
+                <div class="card-body">
+                    <div class="shares-stats">
+                        <div class="share-item">
+                            <span class="share-label">Accepted</span>
+                            <span class="share-value digital-display" id="acceptedShares">0</span>
+                        </div>
+                        <div class="share-item">
+                            <span class="share-label">Rejected</span>
+                            <span class="share-value digital-display rejected" id="rejectedShares">0</span>
+                        </div>
+                        <div class="share-item">
+                            <span class="share-label">HW Errors</span>
+                            <span class="share-value digital-display error" id="hwErrors">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Stats Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>NETWORK</h2>
+                    <div class="card-icon">🌐</div>
+                </div>
+                <div class="card-body">
+                    <div class="network-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">Latency</span>
+                            <span class="stat-value digital-display" id="latency">0</span>
+                            <span class="unit">ms</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Packet Loss</span>
+                            <span class="stat-value digital-display" id="packetLoss">0.00</span>
+                            <span class="unit">%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Pool Status</span>
+                            <span class="stat-value" id="poolStatus">Disconnected</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Luxor Stats Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>LUXOR POOL</h2>
+                    <div class="card-icon">💎</div>
+                </div>
+                <div class="card-body">
+                    <div class="luxor-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">1h Hashrate</span>
+                            <span class="stat-value digital-display" id="luxorHashrate1h">0.0</span>
+                            <span class="unit">TH/s</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">24h Hashrate</span>
+                            <span class="stat-value digital-display" id="luxorHashrate24h">0.0</span>
+                            <span class="unit">TH/s</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Workers Online</span>
+                            <span class="stat-value digital-display" id="workersOnline">0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">24h Revenue</span>
+                            <span class="stat-value digital-display" id="revenue24h">0.00000000</span>
+                            <span class="unit">BTC</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Info Card -->
+            <div class="card card-wide">
+                <div class="card-header">
+                    <h2>SYSTEM INFO</h2>
+                    <div class="card-icon">⚙️</div>
+                </div>
+                <div class="card-body">
+                    <div class="system-info">
+                        <div class="info-item">
+                            <span class="info-label">Uptime</span>
+                            <span class="info-value digital-display" id="uptime">0d 0h 0m</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fan Speed</span>
+                            <span class="info-value digital-display" id="fanSpeed">0</span>
+                            <span class="unit">RPM</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Efficiency</span>
+                            <span class="info-value digital-display" id="efficiency">0.0</span>
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chip Temperatures Card -->
+            <div class="card card-wide">
+                <div class="card-header">
+                    <h2>CHIP TEMPERATURES</h2>
+                    <div class="card-icon">🔥</div>
+                </div>
+                <div class="card-body">
+                    <div class="chip-temps" id="chipTemps">
+                        <div class="no-data">No chip temperature data available</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+            <div class="footer-content">
+                <span>Harbor Glow HashLab Dashboard v1.0.0</span>
+                <span>Last Update: <span id="lastUpdate">--:--:--</span></span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Particle Animation Background -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Scripts -->
+    <script src="/static/js/animations.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
