@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -14,7 +14,7 @@ class ASICStats(BaseModel):
     rejected_shares: int = 0
     hw_errors: int = 0
     pool_status: str = "disconnected"
-    timestamp: datetime = datetime.now()
+    timestamp: datetime = Field(default_factory=datetime.now)
 
 
 class ChipTemperature(BaseModel):
@@ -31,7 +31,7 @@ class NetworkStats(BaseModel):
     bandwidth_up: float = 0.0
     bandwidth_down: float = 0.0
     connection_status: str = "unknown"
-    timestamp: datetime = datetime.now()
+    timestamp: datetime = Field(default_factory=datetime.now)
 
 
 class LuxorStats(BaseModel):
@@ -41,7 +41,7 @@ class LuxorStats(BaseModel):
     workers_online: int = 0
     efficiency: float = 0.0
     revenue_24h: float = 0.0
-    timestamp: datetime = datetime.now()
+    timestamp: datetime = Field(default_factory=datetime.now)
 
 
 class DashboardData(BaseModel):

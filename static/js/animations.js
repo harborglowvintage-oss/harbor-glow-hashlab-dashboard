@@ -4,7 +4,7 @@ class ParticleSystem {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
         this.particles = [];
-        this.particleCount = 100;
+        this.particleCount = 50;  // Reduced from 100 for better performance
         this.connectionDistance = 150;
         
         this.resize();

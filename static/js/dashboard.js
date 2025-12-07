@@ -156,11 +156,16 @@ class DashboardManager {
             const chipElement = document.createElement('div');
             chipElement.className = `chip-temp ${chip.status}`;
             
-            chipElement.innerHTML = `
-                <div class="chip-id">Chip ${chip.chip_id}</div>
-                <div class="chip-value digital-display">${chip.temperature.toFixed(1)}°C</div>
-            `;
+            const chipId = document.createElement('div');
+            chipId.className = 'chip-id';
+            chipId.textContent = `Chip ${chip.chip_id}`;
             
+            const chipValue = document.createElement('div');
+            chipValue.className = 'chip-value digital-display';
+            chipValue.textContent = `${chip.temperature.toFixed(1)}°C`;
+            
+            chipElement.appendChild(chipId);
+            chipElement.appendChild(chipValue);
             container.appendChild(chipElement);
         });
     }
