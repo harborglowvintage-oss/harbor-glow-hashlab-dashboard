@@ -40,16 +40,18 @@
 
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('font-family', 'Impact, Arial Black, sans-serif');
-        text.setAttribute('font-size', '26');
-        text.setAttribute('fill', '#00f6ff');
+        text.setAttribute('font-size', '19');
+        text.setAttribute('fill', '#ffffff');
         text.setAttribute('font-weight', 'bold');
-        text.setAttribute('letter-spacing', '0.2em');
-        text.setAttribute('style', 'text-shadow:0 0 12px #00f6ff,0 0 26px #00f6ff;');
+        text.setAttribute('letter-spacing', '0.08em');
+        text.setAttribute('textLength', '210');
+        text.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+        text.setAttribute('style', 'text-shadow:0 0 10px #00f6ff,0 0 22px #00f6ff,0 0 3px #ffffff;');
         const textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
         textPath.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#core-teal-arc');
         textPath.setAttribute('startOffset', '50%');
         textPath.setAttribute('text-anchor', 'middle');
-        textPath.textContent = 'BTCMINER GPT CORE';
+        textPath.textContent = 'POWERED BY BTCMINERGPT.AI';
         text.appendChild(textPath);
         svg.appendChild(text);
         document.body.appendChild(svg);
