@@ -14,39 +14,13 @@
     <script src="/static/header-fans.js" defer></script>
     <script src="/static/steam-layer.js" defer></script>
     <script src="/static/network-orb.js" defer></script>
+    <script src="/static/teal-core-orb.js" defer></script>
     <script src="/static/space-effects.js" defer></script>
     <script src="/static/btc-realtime-orb.js" defer></script>
     <script src="/static/miner-portal-orb.js" defer></script>
     <script src="/static/swarmgate-ship-layer.js" defer></script>
     <!-- Holo partners CSS -->
     <style>
-.powered-by-badge {
-    position: fixed;
-    top: 18px;
-    left: 18px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    border-radius: 14px;
-    background: rgba(5, 20, 26, 0.92);
-    border: 1px solid rgba(0, 255, 255, 0.35);
-    box-shadow: 0 0 18px rgba(0, 255, 255, 0.25), inset 0 0 12px rgba(0, 60, 80, 0.4);
-    z-index: 1200;
-}
-.powered-by-badge .badge-label {
-    font-family: 'Share Tech Mono','Orbitron',sans-serif;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: #aafcff;
-}
-.powered-by-badge img {
-    width: 140px;
-    height: auto;
-    display: block;
-    filter: drop-shadow(0 0 8px rgba(0,255,255,0.4));
-}
 .partners-section { margin-top: 3rem; text-align: center; position: relative; z-index: 5; padding-bottom: 2rem; }
 .partners-section .section-title {
     font-family: 'Nixie One','Share Tech Mono','Orbitron',sans-serif;
@@ -255,10 +229,6 @@
 <body>
     <!-- Full-screen steam layer -->
     <canvas id="steam-layer"></canvas>
-    <div class="powered-by-badge">
-        <span class="badge-label">Powered by</span>
-        <img src="/static/img/minergpthashlab-logo.svg" alt="MineGPT HashLab logo">
-    </div>
     
     <div class="patch-wires">
         <div class="patch-wire patch-wire-1"></div>
