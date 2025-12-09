@@ -24,17 +24,17 @@
         if (existingArc) existingArc.remove();
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('id', 'core-teal-svg');
-        svg.setAttribute('width', 520);
-        svg.setAttribute('height', 520);
+        svg.setAttribute('width', 480);
+        svg.setAttribute('height', 480);
         svg.style.position = 'fixed';
-        svg.style.top = '180px';
-        svg.style.left = '-30px';
+        svg.style.top = '190px';
+        svg.style.left = '20px';
         svg.style.pointerEvents = 'none';
         svg.style.zIndex = '106';
 
         const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         arc.setAttribute('id', 'core-teal-arc');
-        arc.setAttribute('d', `M 70 260 A 210 210 0 1 1 450 260`);
+        arc.setAttribute('d', `M 80 240 A 180 180 0 1 1 400 240`);
         arc.setAttribute('fill', 'none');
         svg.appendChild(arc);
 
@@ -143,36 +143,67 @@
         }
 
         function drawTubeCity() {
-            const tubeCount = 10;
+            const tubeCount = 14;
             for (let i = 0; i < tubeCount; i++) {
                 const angle = (Math.PI * 2 * i) / tubeCount;
-                const inner = orbRadius * 0.25;
-                const outer = orbRadius * (0.45 + (i % 2) * 0.08);
+                const inner = orbRadius * 0.18 + (i % 2) * orbRadius * 0.03;
+                const outer = orbRadius * (0.38 + (i % 3) * 0.05);
                 const baseX = centerX + Math.cos(angle) * inner;
                 const baseY = centerY + Math.sin(angle) * inner;
                 const topX = centerX + Math.cos(angle) * outer;
                 const topY = centerY + Math.sin(angle) * outer;
 
                 const gradient = ctx.createLinearGradient(baseX, baseY, topX, topY);
-                gradient.addColorStop(0, 'rgba(0,60,80,0.8)');
-                gradient.addColorStop(0.4, 'rgba(0,200,220,0.9)');
-                gradient.addColorStop(0.8, 'rgba(200,255,255,0.9)');
-                gradient.addColorStop(1, 'rgba(255,255,255,0.6)');
+                gradient.addColorStop(0, 'rgba(0,60,80,0.7)');
+                gradient.addColorStop(0.45, 'rgba(0,210,230,0.9)');
+                gradient.addColorStop(0.85, 'rgba(220,255,255,0.8)');
+                gradient.addColorStop(1, 'rgba(255,255,255,0.55)');
 
                 ctx.strokeStyle = gradient;
-                ctx.lineWidth = 5;
+                ctx.lineWidth = 4;
                 ctx.lineCap = 'round';
                 ctx.beginPath();
                 ctx.moveTo(baseX, baseY);
                 ctx.lineTo(topX, topY);
                 ctx.stroke();
 
-                const glow = ctx.createRadialGradient(topX, topY, 0, topX, topY, 14);
+                // tiny vacuum eye
+                const glow = ctx.createRadialGradient(topX, topY, 0, topX, topY, 10);
                 glow.addColorStop(0, 'rgba(255,255,255,0.95)');
-                glow.addColorStop(1, 'rgba(0,255,240,0)');
+                glow.addColorStop(1, 'rgba(0,255,235,0)');
                 ctx.fillStyle = glow;
                 ctx.beginPath();
-                ctx.arc(topX, topY, 14, 0, Math.PI * 2);
+                ctx.arc(topX, topY, 10, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // microchip traces
+            ctx.strokeStyle = 'rgba(0,255,255,0.25)';
+            ctx.lineWidth = 1.5;
+            for (let i = 0; i < 20; i++) {
+                const a1 = Math.random() * Math.PI * 2;
+                const a2 = a1 + (Math.random() * 0.6 - 0.3);
+                const r1 = orbRadius * (0.2 + Math.random() * 0.3);
+                const r2 = r1 + orbRadius * (0.15 + Math.random() * 0.1);
+                const x1 = centerX + Math.cos(a1) * r1;
+                const y1 = centerY + Math.sin(a1) * r1;
+                const x2 = centerX + Math.cos(a2) * r2;
+                const y2 = centerY + Math.sin(a2) * r2;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+
+            // scatter micro bulbs
+            for (let i = 0; i < 25; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const radius = orbRadius * (0.15 + Math.random() * 0.55);
+                const x = centerX + Math.cos(ang) * radius;
+                const y = centerY + Math.sin(ang) * radius;
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.beginPath();
+                ctx.arc(x, y, 2.3, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
