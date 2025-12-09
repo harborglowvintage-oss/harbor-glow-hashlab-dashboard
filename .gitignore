@@ -184,12 +184,19 @@ __marimo__/
 .env.*
 *.secret
 secrets.json
+auth_config.json
+miners_config.json
 
 # Frontend static assets
 node_modules/
 static/fonts/NixieOne.ttf
 static/fonts/*.woff
 static/fonts/*.woff2
+
+# Runtime artifacts
+server.log
+uvicorn.log
+.coverage
 
 # OS / System junk
 .DS_Store
