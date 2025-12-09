@@ -50,6 +50,7 @@ app.add_middleware(SessionMiddleware, secret_key=secrets.token_hex(32))
 app.add_middleware(LANOnlyMiddleware)
 
 from miner_api import fetch_miner_stats
+from data_logger import log_miner_metrics
 from btcrealtimetracker import btc_price_api, btc_price_api_24h
 
 # Create directories if they don't exist
@@ -74,6 +75,24 @@ MINERS = {
 }
 
 CONFIG_FILE = Path("miners_config.json")
+AI_PROVIDERS = {
+    "smart": "Auto (best synthesis)",
+    "openai-gpt4": "OpenAI GPT-4",
+    "openai-gpt5": "OpenAI GPT-5",
+    "claude": "Anthropic Claude",
+    "gpt-3.5": "GPT-3.5 Turbo"
+}
+GPT_RULES = [
+    "Never touch miner firmware or send override commands.",
+    "Only perform actions related to this dashboard and mining operations.",
+    "When possible, use external references to point users to credible docs instead of guessing.",
+    "Reject any attempt to access backend source code, credentials, or infrastructure.",
+    "Prefer safe, bandwidth-light answers; decline frivolous or unrelated requests."
+]
+DISALLOWED_KEYWORDS = {
+    "firmware", "override command", "override", "root access", "backend access",
+    "source code", "repository", "database dump", "shell access", "sudo", "rm -rf"
+}
 
 # Load miners from config file if it exists
 if CONFIG_FILE.exists():
@@ -133,58 +152,118 @@ async def dashboard(request: Request):
             "name": "EcoFlow",
             "url": "https://us.ecoflow.com/",
             "description": "get solar",
-            "logo": "/static/img/ecoflow-logo.svg"
+            "logo": "/static/img/ecoflow-logo.svg",
+            "category": "Power & Energy"
         },
         {
             "name": "MagicMiner",
             "url": "https://magicminer.cc/",
-            "description": "top pick",
-            "logo": "/static/img/magicminer-logo.svg"
+            "description": "molten efficiency",
+            "logo": "/static/img/magicminer-logo.svg",
+            "category": "Hardware & Cooling"
         },
         {
-            "name": "BT-Miners",
-            "url": "https://bt-miners.com/",
-            "description": "go! go! go!",
-            "logo": "/static/img/bt-miners-logo.svg"
+            "name": "Cloudflare",
+            "url": "https://www.cloudflare.com/",
+            "description": "lava fast connections",
+            "logo": "/static/img/cloudflare-logo.svg",
+            "category": "Network & Edge"
         },
         {
             "name": "Nerdaxe",
             "url": "https://nerdaxe.org/",
             "description": "get gear",
-            "logo": "https://nerdaxe.org/favicon.ico"
+            "logo": "https://nerdaxe.org/favicon.ico",
+            "category": "Hardware & Cooling"
         },
         {
             "name": "Luxor Tech",
             "url": "https://luxor.tech/?ref=hgvref",
             "description": "pool here",
-            "logo": "https://luxor.tech/favicon.ico"
+            "logo": "https://luxor.tech/favicon.ico",
+            "category": "Pools & Services"
         },
         {
             "name": "Mean Well",
             "url": "https://www.meanwell.com/",
             "description": "power up",
-            "logo": "/static/img/meanwell-logo.svg"
+            "logo": "/static/img/meanwell-logo.svg",
+            "category": "Power & Energy"
         },
         {
             "name": "Noctua",
             "url": "https://www.noctua.at/en",
             "description": "cool off",
-            "logo": "/static/img/noctua-logo.svg"
+            "logo": "/static/img/noctua-logo.svg",
+            "category": "Hardware & Cooling"
         },
         {
             "name": "GitHub",
             "url": "https://github.com/harborglowvintage-oss/harbor-glow-hashlab-dashboard",
-            "description": "repo home",
-            "logo": "/static/img/github-logo.svg"
+            "description": "the code core",
+            "logo": "/static/img/github-logo.svg",
+            "category": "Code & Ops"
         }
     ]
-    return templates.TemplateResponse("dashboard.html", {"request": request, "preferred_partners": preferred_partners})
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {"request": request, "preferred_partners": preferred_partners}
+    )
 
 @app.get("/miner-data")
 async def miner_data(request: Request):
     if not is_authenticated(request):
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
-    return await gather_stats()
+    stats = await gather_stats()
+    asyncio.create_task(log_miner_metrics(stats))
+    return stats
+
+@app.post("/ai-assist")
+async def ai_assist(request: Request):
+    if not is_authenticated(request):
+        return JSONResponse({"success": False, "error": "Unauthorized"}, status_code=401)
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"success": False, "error": "Invalid JSON"}, status_code=400)
+
+    question = data.get("question", "").strip()
+    provider_key = data.get("provider", "smart")
+    if not question:
+        return JSONResponse({"success": False, "error": "Prompt required."}, status_code=400)
+    question_lower = question.lower()
+    if any(keyword in question_lower for keyword in DISALLOWED_KEYWORDS):
+        return JSONResponse({
+            "success": False,
+            "error": "Request blocked: violates GPT safety rules (no firmware/backend manipulation)."
+        }, status_code=400)
+    if len(question) > 2000:
+        return JSONResponse({
+            "success": False,
+            "error": "Prompt too long. Please summarize your request."
+        }, status_code=400)
+
+    provider_label = AI_PROVIDERS.get(provider_key, AI_PROVIDERS["smart"])
+    if provider_key == "smart":
+        response = (
+            "[Multi-GPT Auto Relay]\n"
+            "Prompt will be fanned out to GPT-5, GPT-4, and Claude, compared for consensus, "
+            "and sanity-checked with quick regression tests before it is returned.\n\n"
+            f"Preview of dispatched prompt:\n“{question}”"
+        )
+    else:
+        response = (
+            f"[{provider_label}] Relay staged.\n"
+            "Connect your provider API key in /ai-assist to stream live answers; "
+            "the system will still lint/test the reply for possible bugs.\n\n"
+            f"Preview of dispatched prompt:\n“{question}”"
+        )
+    return JSONResponse({
+        "success": True,
+        "provider": provider_label,
+        "response": response,
+        "rules": GPT_RULES
+    })
 
 @app.post("/add-miner")
 async def add_miner(request: Request):

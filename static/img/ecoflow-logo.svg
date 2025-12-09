@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420" role="img" aria-labelledby="title desc">
+  <title id="title">EcoFlow Logo</title>
+  <desc id="desc">Clean EF monogram inside a white circle.</desc>
+  <circle cx="210" cy="210" r="200" fill="#050505"/>
+  <circle cx="210" cy="210" r="180" fill="#ffffff"/>
+  <g fill="#050505">
+    <rect x="110" y="130" width="200" height="20"/>
+    <rect x="110" y="170" width="120" height="20"/>
+    <rect x="110" y="210" width="200" height="20"/>
+    <rect x="230" y="170" width="120" height="20"/>
+    <rect x="230" y="210" width="120" height="20"/>
+    <text x="210" y="290" font-family="'Eurostile','BankGothic','Arial',sans-serif" font-size="48" letter-spacing="6" text-anchor="middle">ECOFLOW</text>
+  </g>
+</svg>

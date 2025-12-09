@@ -1,0 +1,154 @@
+/* Header/logo specific styles (kept separate for easy updates) */
+.header-logo-frame {
+  display: inline-block;
+  position: relative;
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  border-radius: 10px;
+  margin-right: 12px;
+  vertical-align: middle;
+  background: linear-gradient(180deg,#071018,#0a1114);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+  border: 2px solid rgba(255,255,255,0.03);
+  isolation: isolate;
+}
+
+.header-logo-frame::before {
+  /* inner metal plate */
+  content: '';
+  position: absolute;
+  /* make the inner plate slightly smaller so shell bezel shows more */
+  left: 8px;
+  top: 10px;
+  right: 8px;
+  bottom: 10px;
+  border-radius: 9px;
+  background: linear-gradient(180deg,#0b2b2b,#04181a 70%);
+  box-shadow: inset 0 2px 6px rgba(255,255,255,0.04), inset 0 -6px 14px rgba(0,0,0,0.7);
+  z-index: 2;
+}
+
+.header-logo-frame::after {
+  /* neon outline/glow */
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  right: 2px;
+  bottom: 2px;
+  border-radius: 9px;
+  pointer-events: none;
+  box-shadow: 0 0 18px 5px rgba(0,234,255,0.14), 0 0 8px 2px rgba(0,234,255,0.07) inset;
+  border: 1px solid rgba(0,234,255,0.16);
+  z-index: 4;
+}
+
+.header-logo-inner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  /* shrink logo so it sits inside the shell */
+  height: 58%;
+  min-width: 58%;
+  object-fit: cover;
+  display: block;
+  z-index: 3;
+}
+
+/* shell/bezel variant: make the outer frame look like a machine case */
+.header-logo-frame.shell {
+  width: 84px;
+  height: 84px;
+  border-radius: 12px;
+  background: linear-gradient(180deg,#061214,#08171a);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.7), inset 0 2px 6px rgba(255,255,255,0.02);
+  border: 3px solid rgba(0,0,0,0.6);
+}
+.header-logo-frame.shell::before {
+  left: 10px; top: 12px; right: 10px; bottom: 12px;
+}
+
+/* If a photorealistic shell texture is available at /static/img/logo-shell.png,
+   the `.has-shell` class will enable it and blend it under the inner plate. */
+.header-logo-frame.shell.has-shell {
+  background-image: url('/static/img/logo-shell.png');
+  background-size: cover;
+  background-position: center;
+}
+.header-logo-frame.shell.has-shell::before {
+  /* slightly darken inner plate so texture shows through */
+  background: linear-gradient(180deg, rgba(10,18,20,0.92), rgba(6,12,14,0.92));
+}
+.header-logo-frame.shell.has-shell .metal-grain {
+  mix-blend-mode: multiply;
+  opacity: 0.45;
+}
+.header-logo-frame.shell.has-shell .metal-highlight {
+  opacity: 0.75;
+}
+
+/* Brushed metal grain overlay */
+.header-logo-frame .metal-grain {
+  position: absolute;
+  left: 10px;
+  top: 12px;
+  right: 10px;
+  bottom: 12px;
+  border-radius: 8px;
+  background-image: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06)),
+                    repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 1px, rgba(0,0,0,0.00) 1px 3px);
+  mix-blend-mode: overlay;
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Specular highlight that sweeps across the plate */
+.header-logo-frame .metal-highlight {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  right: 8px;
+  height: 24%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02) 35%, rgba(255,255,255,0.0) 60%);
+  transform: rotate(-6deg) translateY(-6px);
+  filter: blur(6px);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* subtle rim light for added depth */
+.header-logo-frame .rim-light {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  right: 6px;
+  bottom: 6px;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,234,255,0.03) inset, 0 -6px 18px rgba(255,255,255,0.02) inset;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* corner screws - small round highlights positioned inside the frame */
+.header-logo-frame .screw {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: radial-gradient(circle at 30% 30%, #fff8, #0006 40%);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.6) inset;
+  z-index: 5;
+}
+.header-logo-frame .screw.s1 { left: 8px; top: 8px; }
+.header-logo-frame .screw.s2 { right: 8px; top: 8px; }
+.header-logo-frame .screw.s3 { left: 8px; bottom: 8px; }
+.header-logo-frame .screw.s4 { right: 8px; bottom: 8px; }
+
+/* header centering helper */
+header, h1 { display: flex; align-items: center; gap: 8px; justify-content: center; }

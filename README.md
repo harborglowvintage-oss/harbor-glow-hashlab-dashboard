@@ -28,7 +28,9 @@ A secure, real-time dashboard for monitoring and managing Bitcoin miners. Built 
 
 ### 1. Install Dependencies
 ```bash
-pip install fastapi uvicorn
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 ### 2. Run the Server
 ```bash

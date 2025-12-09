@@ -17,6 +17,29 @@ function updateDeLoreanCurrentTime() {
 
 setInterval(updateDeLoreanCurrentTime, 1000);
 document.addEventListener('DOMContentLoaded', updateDeLoreanCurrentTime);
+
+const HASHRATE_SPIN_THRESHOLD_BY_TYPE = {
+    BG02: 11,
+    NERDQ: 15
+};
+const HASHRATE_SPIN_THRESHOLD_BY_NAME = {
+    NERDAXE1: 15,
+    NERDAXE: 15,
+    NERD: 15
+};
+
+function minerTriggersOrbSpin(name, miner) {
+    if (!miner) return false;
+    const normalizedName = (name || '').toString().trim().toUpperCase();
+    const normalizedType = (miner.type || '').toString().trim().toUpperCase();
+    const typeThreshold = HASHRATE_SPIN_THRESHOLD_BY_TYPE[normalizedType];
+    const nameThreshold = HASHRATE_SPIN_THRESHOLD_BY_NAME[normalizedName];
+    const threshold = typeof nameThreshold === 'number' ? nameThreshold : typeThreshold;
+    if (!threshold) return false;
+    const hashrate = Number(miner.hashrate_1m) || 0;
+    return hashrate > threshold;
+}
+
 async function updateMiners() {
     try {
         const res = await fetch("/miner-data");
@@ -24,6 +47,10 @@ async function updateMiners() {
 
         const entries = Object.entries(data || {});
         const activeEntries = entries.filter(([, miner]) => miner && miner.alive);
+        const orbSpinNeeded = activeEntries.some(([name, miner]) => minerTriggersOrbSpin(name, miner));
+        if (typeof window.setTealOrbSpin === 'function') {
+            window.setTealOrbSpin(orbSpinNeeded);
+        }
         let allCards = [];
         
         // Find highest hashrate

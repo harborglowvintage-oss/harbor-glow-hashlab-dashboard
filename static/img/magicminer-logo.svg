@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="160" viewBox="0 0 400 160" role="img" aria-labelledby="title desc">
+  <title id="title">MagicMiner Logo</title>
+  <desc id="desc">Clean black card with white MagicMiner wordmark and wand accent.</desc>
+  <rect width="400" height="160" fill="#050505" rx="18"/>
+  <text x="40" y="105" fill="#f8f8f8" font-family="'Cinzel Decorative','Cinzel','Georgia',serif" font-size="60" letter-spacing="1.5">Magicminer</text>
+  <g fill="#f8f8f8">
+    <rect x="195" y="38" width="6" height="58" rx="3"/>
+    <polygon points="198,30 204,44 220,44 207,52 212,66 198,57 184,66 189,52 176,44 192,44"/>
+    <rect x="240" y="44" width="6" height="70" rx="3"/>
+    <polygon points="243,36 249,50 265,50 252,58 257,72 243,63 229,72 234,58 221,50 237,50"/>
+  </g>
+</svg>

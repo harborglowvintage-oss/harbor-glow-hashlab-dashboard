@@ -1,0 +1,248 @@
+.nixie-led-bar-container {
+  position: absolute;
+  left: 0; right: 0; top: -14px;
+  width: 100%;
+  height: 12px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.nixie-led-bar {
+  position: relative;
+  width: 90%;
+  height: 8px;
+  border-radius: 4px;
+  background: #0ff;
+  box-shadow: 0 0 16px 4px #0ff, 0 0 32px 8px #0ff;
+  opacity: 0.85;
+  overflow: hidden;
+}
+.nixie-led-bar-dot {
+  position: absolute;
+  top: 0;
+  width: 18px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #fff 0%, #0ff 60%, #fff 100%);
+  box-shadow: 0 0 12px 4px #0ff, 0 0 24px 8px #fff;
+  opacity: 0.95;
+  animation: nixie-led-bar-move 2.2s linear infinite alternate;
+}
+.nixie-led-bar-dot.orange {
+  background: linear-gradient(90deg, #fff 0%, #ffa500 60%, #fff 100%);
+  box-shadow: 0 0 12px 4px #ffa500, 0 0 24px 8px #fff;
+}
+.nixie-led-bar-dot.red {
+  background: linear-gradient(90deg, #fff 0%, #ff2222 60%, #fff 100%);
+  box-shadow: 0 0 12px 4px #ff2222, 0 0 24px 8px #fff;
+}
+@keyframes nixie-led-bar-move {
+  0% { left: 0; }
+  100% { left: calc(100% - 18px); }
+}
+/* --- Nixie Panel Fan, Vent, and Smoke Enhancements (v2) --- */
+.nixie-fan-vent-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  width: 100%;
+  position: relative;
+  min-height: 60px;
+  height: 60px;
+  z-index: 3;
+}
+.nixie-micro-fan {
+  width: 48px;
+  height: 48px;
+  background: #111;
+  display: block;
+  filter: drop-shadow(0 0 8px #fff8);
+  z-index: 4;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 2px solid #bbb;
+  overflow: hidden;
+}
+.nixie-vent {
+  flex: 1;
+  height: 33px; /* 1.5x taller than before */
+  margin: 0 12px;
+  background: repeating-linear-gradient(90deg, #222 0 8px, #444 8px 16px);
+  border-radius: 8px;
+  box-shadow: 0 0 16px #000a, 0 0 0 2px #222 inset;
+  position: relative;
+  overflow: hidden;
+}
+.nixie-vent::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, #00eaff55 50%, transparent 100%);
+  opacity: 0.8;
+  animation: nixie-vent-move 2.5s linear infinite;
+  z-index: 2;
+}
+@keyframes nixie-vent-move {
+  0% { background-position: 0% 0; }
+  100% { background-position: 100% 0; }
+}
+.nixie-smoke {
+  position: absolute;
+  left: 0; right: 0; top: -16px; bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+  width: 100%;
+  height: 100px;
+  min-height: 100px;
+  overflow: visible;
+}
+.nixie-smoke-puff {
+  position: absolute;
+  bottom: 0;
+  width: 54px;
+  height: 32px;
+  background: radial-gradient(ellipse at center, rgba(0,255,255,0.18) 0%, rgba(0,200,255,0.13) 60%, rgba(0,0,64,0.08) 100%);
+  opacity: 0.7;
+  border-radius: 50%;
+  filter: blur(4px);
+  animation: nixie-smoke-rise 6s linear infinite;
+  pointer-events: none;
+  z-index: 11;
+}
+.nixie-smoke-puff.nixie-smoke-layer2 {
+  width: 70px;
+  height: 38px;
+  opacity: 0.4;
+  filter: blur(8px);
+  animation-duration: 8s;
+  background: radial-gradient(ellipse at center, rgba(0,255,255,0.10) 0%, rgba(0,200,255,0.08) 60%, rgba(0,0,64,0.04) 100%);
+}
+.nixie-smoke-puff.nixie-smoke-layer3 {
+  width: 90px;
+  height: 44px;
+  opacity: 0.22;
+  filter: blur(14px);
+  animation-duration: 10s;
+  background: radial-gradient(ellipse at center, rgba(0,255,255,0.07) 0%, rgba(0,200,255,0.05) 60%, rgba(0,0,64,0.02) 100%);
+}
+@keyframes nixie-smoke-rise {
+  0% { transform: translateY(0) scale(1); opacity: 0.7; }
+  40% { opacity: 0.6; }
+  60% { opacity: 0.4; }
+  80% { opacity: 0.2; }
+  100% { transform: translateY(-110px) scale(1.7); opacity: 0; }
+}
+
+/* Nixie tube font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+@font-face {
+  font-family: 'NixieOne';
+  src: url('https://fonts.gstatic.com/s/nixieone/v21/lW-8wjkKLXjg5y2o2uUYVXY.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.nixie-digit {
+  font-family: 'NixieOne', 'Share Tech Mono', monospace;
+  color: #ff9100;
+  background: #111;
+  border-radius: 6px;
+  box-shadow: 0 0 16px #ff9100, 0 0 8px #000 inset;
+  text-shadow: 0 0 8px #ff9100, 0 0 2px #fff, 0 0 24px #ff9100;
+  font-size: 1.08em;
+  padding: 2px 12px;
+  margin: 0 2px;
+  display: inline-block;
+  min-width: 48px;
+  text-align: center;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  animation: nixie-fadein 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+@keyframes nixie-fadein {
+  0% { opacity: 0; filter: blur(8px); }
+  60% { opacity: 1; filter: blur(2px); }
+  100% { opacity: 1; filter: blur(0); }
+}
+
+.nixie-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0 0 6px 0;
+  padding: 0 0 0 0;
+  border-radius: 6px;
+  background: #181818;
+  box-shadow: 0 0 12px #000a, 0 0 0 2px #222 inset;
+  font-family: 'NixieOne', 'Share Tech Mono', monospace;
+  font-size: 1.08em;
+  letter-spacing: 2px;
+  min-height: 38px;
+}
+
+.nixie-label {
+  width: 120px;
+  font-size: 1.08em;
+  font-weight: bold;
+  text-align: right;
+  margin-right: 18px;
+  color: #ff9100;
+  text-shadow: 0 0 8px #ff9100, 0 0 2px #fff;
+  font-family: 'NixieOne', 'Share Tech Mono', monospace;
+  letter-spacing: 1.5px;
+}
+.add-miner-panel {
+  background: rgba(24,32,40,0.5);
+  border-radius: 18px;
+  box-shadow: 0 0 32px #00eaff88, 0 0 8px #222 inset, 0 0 2px #00eaff;
+  padding: 24px 32px;
+  color: #fff;
+  font-family: 'NixieOne', 'Share Tech Mono', monospace;
+  text-shadow: 0 0 8px #00eaff, 0 0 2px #fff, 0 0 24px #00eaff;
+  transition: background 0.3s, opacity 0.3s;
+  opacity: 0.5;
+}
+.add-miner-panel.active {
+  opacity: 1;
+  background: rgba(24,32,40,0.92);
+}
+.add-miner-panel h3,
+.add-miner-panel label,
+.add-miner-panel input,
+.add-miner-panel button {
+  color: #fff;
+  text-shadow: 0 0 8px #00eaff, 0 0 2px #fff;
+}
+.add-miner-panel input {
+  background: #181818;
+  border: 2px solid #00eaff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+.add-miner-panel button {
+  background: linear-gradient(90deg, #00eaff 60%, #0099bb 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 32px;
+  font-size: 1.08em;
+  font-family: 'NixieOne', 'Share Tech Mono', monospace;
+  cursor: pointer;
+  box-shadow: 0 0 12px #00eaff88, 0 2px 8px #00eaff44;
+  text-shadow: 0 0 8px #00eaff, 0 0 2px #fff;
+  letter-spacing: 1px;
+  transition: background 0.2s, color 0.2s;
+}
+.add-miner-panel button:hover {
+  background: #00eaff;
+  color: #181818;
+}
+
+/* Header logo frame and logo styling (clean, cropped, with overlay frame) */
+/* header/logo styles moved to static/header.css */

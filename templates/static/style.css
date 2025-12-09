@@ -1,0 +1,34 @@
+body {
+    background: #000;
+    margin: 20px;
+}
+
+/* DIGITAL GREEN THEME */
+* {
+    font-family: 'Digital-7 Mono', monospace !important;
+    color: #00FF66 !important;
+    text-shadow: 0 0 6px #00FF66, 0 0 12px #009944;
+}
+
+/* Header */
+h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Miner Cards */
+.miner-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.miner-card {
+    background: #0a0a0a;
+    border: 2px solid #00FF66;
+    padding: 15px;
+    width: 260px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,255,100,0.2);
+}

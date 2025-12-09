@@ -19,8 +19,12 @@
     <script src="/static/btc-realtime-orb.js" defer></script>
     <script src="/static/miner-portal-orb.js" defer></script>
     <script src="/static/swarmgate-ship-layer.js" defer></script>
+    <script src="/static/ai-orb-console.js" defer></script>
     <!-- Holo partners CSS -->
     <style>
+body {
+    position: relative;
+}
 .partners-section { margin-top: 3rem; text-align: center; position: relative; z-index: 5; padding-bottom: 2rem; }
 .partners-section .section-title {
     font-family: 'Nixie One','Share Tech Mono','Orbitron',sans-serif;
@@ -174,6 +178,101 @@
     padding: 12px;
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
     margin-bottom: 0.45rem;
+    object-fit: contain;
+}
+
+.ai-console {
+    position: fixed;
+    top: 160px;
+    left: 520px;
+    bottom: auto;
+    right: auto;
+    width: 320px;
+    backdrop-filter: blur(14px);
+    background: rgba(3, 12, 20, 0.92);
+    border: 1px solid rgba(0, 255, 255, 0.25);
+    border-radius: 20px;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.6), 0 0 25px rgba(0,255,255,0.35);
+    padding: 1rem;
+    z-index: 350;
+    transform: translateY(130%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+}
+.ai-console.open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+.ai-console-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Share Tech Mono','Orbitron',sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #a9feff;
+    margin-bottom: 0.6rem;
+}
+.ai-console-header button {
+    background: transparent;
+    border: none;
+    color: #a9feff;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+.ai-console form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+.ai-console select,
+.ai-console textarea {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(0,255,255,0.25);
+    background: rgba(0,20,30,0.8);
+    color: #e2ffff;
+    font-family: 'Share Tech Mono', monospace;
+    padding: 0.6rem;
+}
+.ai-console textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+.ai-console button[type="submit"] {
+    background: linear-gradient(90deg, #00ffd1 0%, #00c2ff 100%);
+    color: #002432;
+    border: none;
+    border-radius: 12px;
+    padding: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+}
+.ai-console-log {
+    margin-top: 0.8rem;
+    padding: 0.8rem;
+    background: rgba(0,12,20,0.7);
+    border-radius: 12px;
+    max-height: 160px;
+    overflow-y: auto;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    color: #98fffd;
+    border: 1px solid rgba(0,255,255,0.12);
+}
+.ai-console-rules {
+    margin-top: 0.8rem;
+    padding-left: 1.2rem;
+    font-size: 0.78rem;
+    color: #7be9ff;
+    line-height: 1.4;
+}
+.ai-console-rules li {
+    margin-bottom: 0.2rem;
 }
 .partner-name {
     font-family: 'Share Tech Mono','Audiowide','Eurostile','sans-serif';
@@ -413,7 +512,7 @@
     </div>
     
     <div class="add-miner-panel">
-        <h3>Add New Miner</h3>
+        <h3>Add or Remove Miners</h3>
         <form id="addMinerForm" autocomplete="off">
             <div class="form-group">
                 <label for="minerName">Miner Name:</label>
@@ -451,6 +550,31 @@
                 </a>
             {% endfor %}
         </div>
+    </section>
+
+    <section id="ai-orb-console" class="ai-console" aria-live="polite">
+        <div class="ai-console-header">
+            <span>GPT Engine Relay</span>
+            <button type="button" data-ai-console-close aria-label="Close GPT relay">×</button>
+        </div>
+        <form id="ai-orb-form">
+            <select id="ai-orb-provider" name="provider">
+                <option value="smart">Auto (best synthesis)</option>
+                <option value="openai-gpt4">OpenAI GPT-4</option>
+                <option value="openai-gpt5">OpenAI GPT-5</option>
+                <option value="claude">Anthropic Claude</option>
+                <option value="gpt-3.5">GPT-3.5 Turbo</option>
+            </select>
+            <textarea id="ai-orb-question" name="question" placeholder="Ask the GPT engine..."></textarea>
+            <button type="submit">SEND REQUEST</button>
+        </form>
+        <div class="ai-console-log" id="ai-orb-log">Click the teal eye to launch the relay.</div>
+        <ul class="ai-console-rules">
+            <li>No firmware changes or override commands.</li>
+            <li>Stick to dashboard + mining operations only.</li>
+            <li>Never expose backend code, creds, or infrastructure.</li>
+            <li>Decline unrelated / wasteful requests.</li>
+        </ul>
     </section>
 
     <script>

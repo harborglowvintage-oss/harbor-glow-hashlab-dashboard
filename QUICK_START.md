@@ -1,5 +1,12 @@
 # 🚀 QUICK START GUIDE
 
+## Install Dependencies
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
 ## Start the Server
 ```bash
 cd /home/hgvboss/Desktop/goldsunproject
@@ -67,6 +74,8 @@ Frontend:
       ├── dashboard.js     (Miner updates)
       ├── style.css        (Main styles)
       ├── nixie.js         (Power calculator)
+      ├── img/ecoflow-logo.svg (Local EcoFlow mark)
+      ├── img/magicminer-logo.svg (Local MagicMiner mark)
       ├── img/noctua-logo.svg (Local Noctua mark, keeps assets outside firmware)
       └── [12 other JS files for canvas/effects]
 ```

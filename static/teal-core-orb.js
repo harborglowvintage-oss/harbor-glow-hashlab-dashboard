@@ -10,6 +10,7 @@
         canvas.style.height = '520px';
         canvas.style.pointerEvents = 'none';
         canvas.style.zIndex = '105';
+        canvas.style.transformOrigin = '50% 50%';
         document.body.appendChild(canvas);
 
         const ctx = canvas.getContext('2d');
@@ -17,44 +18,276 @@
         canvas.height = 520;
         const centerX = 260;
         const centerY = 260;
-        const orbRadius = 140 * 0.7; // 30% smaller than original
+        const orbRadius = 140 * 0.7 * 0.9; // shrink orb by additional 10%
+        const spinTargets = [];
+        spinTargets.push(canvas);
+
+        // Ensure eye animation styles exist
+        const eyeStyleId = 'teal-eye-effects';
+        if (!document.getElementById(eyeStyleId)) {
+            const pulseStyle = document.createElement('style');
+            pulseStyle.id = eyeStyleId;
+            pulseStyle.textContent = `
+                @keyframes tealEyePulse {
+                    0% { transform: scale(0.8); opacity: 0.2; }
+                    50% { transform: scale(1); opacity: 0.65; }
+                    100% { transform: scale(1.2); opacity: 0; }
+                }
+                @keyframes tealEyeCue {
+                    0%,100% { opacity: 0.85; transform: translateY(0); }
+                    50% { opacity: 0.35; transform: translateY(-6px); }
+                }
+                @keyframes tealEyeBlink {
+                    0%, 93%, 100% { transform: translateY(-140%); opacity: 0; }
+                    95% { transform: translateY(-45%); opacity: 0.85; }
+                    97% { transform: translateY(0); opacity: 1; }
+                    98.5% { transform: translateY(-60%); opacity: 0.4; }
+                }
+                @keyframes tealEyeBlinkBottom {
+                    0%, 93%, 100% { transform: translateY(140%); opacity: 0; }
+                    95% { transform: translateY(45%); opacity: 0.85; }
+                    97% { transform: translateY(0); opacity: 1; }
+                    98.5% { transform: translateY(60%); opacity: 0.4; }
+                }
+                @keyframes tealOrbSpin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                .teal-core-spin {
+                    animation: tealOrbSpin 2.4s linear infinite;
+                }
+            `;
+            document.head.appendChild(pulseStyle);
+        }
+
+        // Interactive GPT eye overlay
+        const existingEye = document.getElementById('teal-orb-eye');
+        if (existingEye) existingEye.remove();
+        const existingCue = document.getElementById('teal-eye-cue');
+        if (existingCue) existingCue.remove();
+        const eyeButton = document.createElement('button');
+        eyeButton.id = 'teal-orb-eye';
+        eyeButton.setAttribute('aria-label', 'Open GPT engine console');
+        eyeButton.innerHTML = '<span class=\"eye-ring\"></span><span class=\"eye-iris\"></span><span class=\"eye-glow\"></span>';
+        Object.assign(eyeButton.style, {
+            position: 'fixed',
+            top: `${200 + centerY - 38}px`,
+            left: `${centerX - 38}px`,
+            width: '76px',
+            height: '76px',
+            borderRadius: '50%',
+            border: '2px solid rgba(0,255,243,0.55)',
+            background: 'radial-gradient(circle, rgba(0,255,255,0.7) 0%, rgba(0,110,150,0.8) 60%, rgba(0,30,40,0.95) 100%)',
+            boxShadow: '0 0 18px rgba(0,255,255,0.65)',
+            cursor: 'pointer',
+            zIndex: '210',
+            pointerEvents: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+        });
+        eyeButton.addEventListener('mouseenter', () => {
+            eyeButton.style.transform = 'scale(1.08)';
+            eyeButton.style.boxShadow = '0 0 26px rgba(0,255,255,0.9)';
+        });
+        eyeButton.addEventListener('mouseleave', () => {
+            eyeButton.style.transform = 'scale(1)';
+            eyeButton.style.boxShadow = '0 0 18px rgba(0,255,255,0.65)';
+        });
+        const eyeRing = eyeButton.querySelector('.eye-ring');
+        eyeRing.style.cssText = `
+            position: absolute;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 2px solid rgba(0,255,255,0.28);
+            animation: tealEyePulse 3.6s ease-out infinite;
+            pointer-events: none;
+        `;
+        const eyeIris = eyeButton.querySelector('.eye-iris');
+        eyeIris.style.cssText = `
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(0,255,255,0.6) 55%, rgba(0,60,80,0.9) 100%);
+            box-shadow: inset 0 0 12px rgba(0,0,0,0.7);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.04s ease-out;
+        `;
+        const pupil = document.createElement('span');
+        pupil.style.cssText = `
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #00cfff 55%, #002842 100%);
+            box-shadow: 0 0 8px rgba(0,255,255,0.7);
+        `;
+        eyeIris.appendChild(pupil);
+
+        eyeButton.querySelector('.eye-glow').style.cssText = `
+            position: absolute;
+            width: 92px;
+            height: 92px;
+            border-radius: 50%;
+            box-shadow: 0 0 45px rgba(0,255,255,0.45);
+            pointer-events: none;
+        `;
+        const topLid = document.createElement('span');
+        topLid.style.cssText = `
+            position: absolute;
+            width: 74px;
+            height: 40px;
+            top: -6px;
+            border-radius: 50% 50% 0 0;
+            background: linear-gradient(180deg, rgba(0,28,34,0.9) 0%, rgba(0,10,12,0.1) 100%);
+            border-top: 1px solid rgba(0,255,255,0.25);
+            border-left: 1px solid rgba(0,255,255,0.08);
+            border-right: 1px solid rgba(0,255,255,0.08);
+            animation: tealEyeBlink 11s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+            pointer-events: none;
+        `;
+        const bottomLid = document.createElement('span');
+        bottomLid.style.cssText = `
+            position: absolute;
+            width: 74px;
+            height: 40px;
+            bottom: -6px;
+            border-radius: 0 0 50% 50%;
+            background: linear-gradient(0deg, rgba(0,28,34,0.9) 0%, rgba(0,10,12,0.1) 100%);
+            border-bottom: 1px solid rgba(0,255,255,0.25);
+            border-left: 1px solid rgba(0,255,255,0.08);
+            border-right: 1px solid rgba(0,255,255,0.08);
+            animation: tealEyeBlinkBottom 11s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+            animation-delay: 0.2s;
+            pointer-events: none;
+        `;
+        eyeButton.appendChild(topLid);
+        eyeButton.appendChild(bottomLid);
+        eyeButton.addEventListener('click', () => {
+            document.dispatchEvent(new CustomEvent('tealOrbEye:open'));
+        });
+        document.body.appendChild(eyeButton);
+
+        let irisOffsetX = 0;
+        let irisOffsetY = 0;
+        let targetOffsetX = 0;
+        let targetOffsetY = 0;
+        const smoothFollow = () => {
+            irisOffsetX += (targetOffsetX - irisOffsetX) * 0.35;
+            irisOffsetY += (targetOffsetY - irisOffsetY) * 0.35;
+            eyeIris.style.transform = `translate(${irisOffsetX}px, ${irisOffsetY}px)`;
+            requestAnimationFrame(smoothFollow);
+        };
+        smoothFollow();
+
+        const updateIrisTarget = (clientX, clientY) => {
+            const rect = eyeButton.getBoundingClientRect();
+            const centerXEye = rect.left + rect.width / 2;
+            const centerYEye = rect.top + rect.height / 2;
+            const dx = clientX - centerXEye;
+            const dy = clientY - centerYEye;
+            const distance = Math.min(1, Math.hypot(dx, dy) / 80);
+            const maxOffset = 14;
+            targetOffsetX = (dx / (Math.abs(dx) + Math.abs(dy) + 1)) * maxOffset * distance;
+            targetOffsetY = (dy / (Math.abs(dx) + Math.abs(dy) + 1)) * maxOffset * distance;
+        };
+        document.addEventListener('mousemove', (evt) => updateIrisTarget(evt.clientX, evt.clientY));
+        document.addEventListener('touchmove', (evt) => {
+            if (evt.touches && evt.touches[0]) {
+                updateIrisTarget(evt.touches[0].clientX, evt.touches[0].clientY);
+            }
+        }, { passive: true });
+
+        const eyeCue = document.createElement('div');
+        eyeCue.id = 'teal-eye-cue';
+        eyeCue.textContent = 'Click to open GPT';
+        Object.assign(eyeCue.style, {
+            position: 'fixed',
+            top: `${200 + centerY + 70}px`,
+            left: `${centerX - 110}px`,
+            width: '220px',
+            textAlign: 'center',
+            fontFamily: '\'Share Tech Mono\', monospace',
+            fontSize: '0.9rem',
+            fontWeight: '700',
+            letterSpacing: '0.25em',
+            textTransform: 'uppercase',
+            pointerEvents: 'none',
+            animation: 'tealEyeCue 4s ease-in-out infinite',
+            zIndex: '209'
+        });
+        eyeCue.style.setProperty('color', '#ffc857', 'important');
+        eyeCue.style.setProperty('textShadow', '0 0 12px rgba(255,180,66,0.95)', 'important');
+        document.body.appendChild(eyeCue);
+
+        document.addEventListener('tealOrbEye:open', () => {
+            eyeCue.style.opacity = '0';
+        });
+        document.addEventListener('tealOrbEye:close', () => {
+            eyeCue.style.opacity = '1';
+        });
 
         // Swarmgate-style arc text
         const existingArc = document.getElementById('core-teal-svg');
         if (existingArc) existingArc.remove();
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('id', 'core-teal-svg');
-        svg.setAttribute('width', 480);
-        svg.setAttribute('height', 480);
+        svg.setAttribute('width', 520);
+        svg.setAttribute('height', 520);
         svg.style.position = 'fixed';
-        svg.style.top = '190px';
-        svg.style.left = '20px';
+        svg.style.top = '200px';
+        svg.style.left = '0px';
         svg.style.pointerEvents = 'none';
         svg.style.zIndex = '106';
+        svg.style.transformOrigin = '50% 50%';
+
+        const arcRadius = orbRadius + 35;
+        const arcLength = Math.PI * arcRadius;
+        const arcStartX = centerX - arcRadius;
+        const arcEndX = centerX + arcRadius;
+        const arcY = centerY + 10;
+        const arcPath = `M ${arcStartX} ${arcY} A ${arcRadius} ${arcRadius} 0 1 1 ${arcEndX} ${arcY}`;
 
         const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         arc.setAttribute('id', 'core-teal-arc');
-        arc.setAttribute('d', `M 80 240 A 180 180 0 1 1 400 240`);
+        arc.setAttribute('d', arcPath);
         arc.setAttribute('fill', 'none');
         svg.appendChild(arc);
 
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('font-family', 'Impact, Arial Black, sans-serif');
-        text.setAttribute('font-size', '19');
+        text.setAttribute('font-size', '20.5');
         text.setAttribute('fill', '#ffffff');
         text.setAttribute('font-weight', 'bold');
         text.setAttribute('letter-spacing', '0.08em');
-        text.setAttribute('textLength', '210');
+        text.setAttribute('textLength', `${Math.round(arcLength * 0.9)}`);
         text.setAttribute('lengthAdjust', 'spacingAndGlyphs');
-        text.setAttribute('style', 'text-shadow:0 0 10px #00f6ff,0 0 22px #00f6ff,0 0 3px #ffffff;');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.setAttribute('style', 'text-shadow:0 0 10px #ff2222,0 0 22px #ff2222,0 0 2px #ffffff;');
         const textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
         textPath.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#core-teal-arc');
         textPath.setAttribute('startOffset', '50%');
         textPath.setAttribute('text-anchor', 'middle');
-        textPath.textContent = 'POWERED BY BTCMINERGPT.AI';
+        textPath.textContent = 'powered by btcminergpt.ai';
         text.appendChild(textPath);
         svg.appendChild(text);
         document.body.appendChild(svg);
+        spinTargets.push(svg);
+
+        let orbSpinActive = false;
+        window.setTealOrbSpin = function(enabled) {
+            const nextState = Boolean(enabled);
+            if (nextState === orbSpinActive) return;
+            orbSpinActive = nextState;
+            spinTargets.forEach(el => {
+                if (!el) return;
+                el.classList.toggle('teal-core-spin', orbSpinActive);
+            });
+        };
 
         // Particles reused from network orb
         const particles = [];
@@ -74,36 +307,6 @@
                 wobbleSpeed: Math.random() * 0.04 + 0.02
             });
         }
-
-        const uploadLabel = {
-            theta: Math.PI / 2,
-            phi: Math.PI / 2.2,
-            distance: orbRadius + 40,
-            speed: 0.03,
-            total: 0,
-            label: '↑0.0MB'
-        };
-
-        const downloadLabel = {
-            theta: Math.PI / 2 + Math.PI,
-            phi: Math.PI / 2.2,
-            distance: orbRadius + 70,
-            speed: 0.03,
-            total: 0,
-            label: '↓0.0MB'
-        };
-
-        setInterval(() => {
-            uploadLabel.total += Math.random() * 8;
-            uploadLabel.label = `↑${uploadLabel.total.toFixed(1)}MB`;
-            uploadLabel.speed = Math.min(0.08, uploadLabel.speed + 0.01);
-        }, 1500);
-
-        setInterval(() => {
-            downloadLabel.total += Math.random() * 10;
-            downloadLabel.label = `↓${downloadLabel.total.toFixed(1)}MB`;
-            downloadLabel.speed = Math.min(0.08, downloadLabel.speed + 0.01);
-        }, 1800);
 
         function drawOrb() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -246,36 +449,9 @@
             });
         }
 
-        function drawLabels() {
-            uploadLabel.theta += uploadLabel.speed;
-            uploadLabel.speed = Math.max(0.015, uploadLabel.speed * 0.99);
-            const upX = centerX + uploadLabel.distance * Math.sin(uploadLabel.phi) * Math.cos(uploadLabel.theta);
-            const upY = centerY + uploadLabel.distance * Math.sin(uploadLabel.phi) * Math.sin(uploadLabel.theta);
-
-            downloadLabel.theta += downloadLabel.speed;
-            downloadLabel.speed = Math.max(0.015, downloadLabel.speed * 0.99);
-            const downX = centerX + downloadLabel.distance * Math.sin(downloadLabel.phi) * Math.cos(downloadLabel.theta);
-            const downY = centerY + downloadLabel.distance * Math.sin(downloadLabel.phi) * Math.sin(downloadLabel.theta);
-
-            ctx.font = '700 20px "Share Tech Mono", monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-
-            ctx.fillStyle = 'rgba(0,255,255,0.9)';
-            ctx.shadowColor = '#00ffff';
-            ctx.shadowBlur = 12;
-            ctx.fillText(uploadLabel.label, upX, upY);
-
-            ctx.fillStyle = 'rgba(0,255,180,0.9)';
-            ctx.shadowColor = '#00ffb4';
-            ctx.fillText(downloadLabel.label, downX, downY);
-            ctx.shadowBlur = 0;
-        }
-
         function animate() {
             drawOrb();
             drawParticles();
-            drawLabels();
             requestAnimationFrame(animate);
         }
 
