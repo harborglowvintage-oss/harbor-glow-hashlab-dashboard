@@ -4,37 +4,37 @@
         const canvas = document.createElement('canvas');
         canvas.id = 'teal-core-orb';
         canvas.style.position = 'fixed';
-        canvas.style.top = '220px';
-        canvas.style.left = '20px';
-        canvas.style.width = '420px';
-        canvas.style.height = '420px';
+        canvas.style.top = '200px';
+        canvas.style.left = '0px';
+        canvas.style.width = '520px';
+        canvas.style.height = '520px';
         canvas.style.pointerEvents = 'none';
         canvas.style.zIndex = '105';
         document.body.appendChild(canvas);
 
         const ctx = canvas.getContext('2d');
-        canvas.width = 420;
-        canvas.height = 420;
-        const centerX = 210;
-        const centerY = 210;
-        const orbRadius = 140; // 4x the network orb
+        canvas.width = 520;
+        canvas.height = 520;
+        const centerX = 260;
+        const centerY = 260;
+        const orbRadius = 140 * 0.7; // 30% smaller than original
 
         // Swarmgate-style arc text
         const existingArc = document.getElementById('core-teal-svg');
         if (existingArc) existingArc.remove();
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('id', 'core-teal-svg');
-        svg.setAttribute('width', 480);
-        svg.setAttribute('height', 480);
+        svg.setAttribute('width', 520);
+        svg.setAttribute('height', 520);
         svg.style.position = 'fixed';
-        svg.style.top = '205px';
-        svg.style.left = '5px';
+        svg.style.top = '180px';
+        svg.style.left = '-30px';
         svg.style.pointerEvents = 'none';
         svg.style.zIndex = '106';
 
         const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         arc.setAttribute('id', 'core-teal-arc');
-        arc.setAttribute('d', `M 60 240 A 180 180 0 1 1 420 240`);
+        arc.setAttribute('d', `M 70 260 A 210 210 0 1 1 450 260`);
         arc.setAttribute('fill', 'none');
         svg.appendChild(arc);
 
@@ -123,10 +123,12 @@
             ctx.arc(centerX, centerY, orbRadius, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.strokeStyle = 'rgba(0,255,255,0.35)';
-            ctx.lineWidth = 2;
+            drawTubeCity();
+
+            ctx.strokeStyle = 'rgba(0,255,255,0.25)';
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.ellipse(centerX, centerY + 10, orbRadius * 0.8, orbRadius * 0.2, 0, 0, Math.PI * 2);
+            ctx.ellipse(centerX, centerY + 6, orbRadius * 0.75, orbRadius * 0.18, 0, 0, Math.PI * 2);
             ctx.stroke();
 
             const time = Date.now() * 0.002;
@@ -138,6 +140,41 @@
             ctx.beginPath();
             ctx.arc(centerX, centerY, pulseSize, 0, Math.PI * 2);
             ctx.fill();
+        }
+
+        function drawTubeCity() {
+            const tubeCount = 10;
+            for (let i = 0; i < tubeCount; i++) {
+                const angle = (Math.PI * 2 * i) / tubeCount;
+                const inner = orbRadius * 0.25;
+                const outer = orbRadius * (0.45 + (i % 2) * 0.08);
+                const baseX = centerX + Math.cos(angle) * inner;
+                const baseY = centerY + Math.sin(angle) * inner;
+                const topX = centerX + Math.cos(angle) * outer;
+                const topY = centerY + Math.sin(angle) * outer;
+
+                const gradient = ctx.createLinearGradient(baseX, baseY, topX, topY);
+                gradient.addColorStop(0, 'rgba(0,60,80,0.8)');
+                gradient.addColorStop(0.4, 'rgba(0,200,220,0.9)');
+                gradient.addColorStop(0.8, 'rgba(200,255,255,0.9)');
+                gradient.addColorStop(1, 'rgba(255,255,255,0.6)');
+
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(baseX, baseY);
+                ctx.lineTo(topX, topY);
+                ctx.stroke();
+
+                const glow = ctx.createRadialGradient(topX, topY, 0, topX, topY, 14);
+                glow.addColorStop(0, 'rgba(255,255,255,0.95)');
+                glow.addColorStop(1, 'rgba(0,255,240,0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(topX, topY, 14, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
 
         function drawParticles() {
