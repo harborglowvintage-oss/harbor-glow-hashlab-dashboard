@@ -132,38 +132,50 @@ async def dashboard(request: Request):
         {
             "name": "EcoFlow",
             "url": "https://us.ecoflow.com/",
-            "description": "Off-grid & home power solutions",
-            "logo": "https://us.ecoflow.com/favicon.ico"
+            "description": "get solar",
+            "logo": "/static/img/ecoflow-logo.svg"
         },
         {
             "name": "MagicMiner",
             "url": "https://magicminer.cc/",
-            "description": "Home-integrated miner solutions",
-            "logo": "https://magicminer.cc/favicon.ico"
+            "description": "top pick",
+            "logo": "/static/img/magicminer-logo.svg"
+        },
+        {
+            "name": "BT-Miners",
+            "url": "https://bt-miners.com/",
+            "description": "go! go! go!",
+            "logo": "/static/img/bt-miners-logo.svg"
         },
         {
             "name": "Nerdaxe",
             "url": "https://nerdaxe.org/",
-            "description": "Open-source ASIC miner",
+            "description": "get gear",
             "logo": "https://nerdaxe.org/favicon.ico"
         },
         {
             "name": "Luxor Tech",
             "url": "https://luxor.tech/?ref=hgvref",
-            "description": "Full-stack mining services",
+            "description": "pool here",
             "logo": "https://luxor.tech/favicon.ico"
         },
         {
             "name": "Mean Well",
             "url": "https://www.meanwell.com/",
-            "description": "Power supply specialists",
-            "logo": "https://www.meanwell.com/favicon.ico"
+            "description": "power up",
+            "logo": "/static/img/meanwell-logo.svg"
         },
         {
             "name": "Noctua",
             "url": "https://www.noctua.at/en",
-            "description": "High-performance cooling solutions",
+            "description": "cool off",
             "logo": "/static/img/noctua-logo.svg"
+        },
+        {
+            "name": "GitHub",
+            "url": "https://github.com/harborglowvintage-oss/harbor-glow-hashlab-dashboard",
+            "description": "repo home",
+            "logo": "/static/img/github-logo.svg"
         }
     ]
     return templates.TemplateResponse("dashboard.html", {"request": request, "preferred_partners": preferred_partners})
@@ -198,5 +210,22 @@ async def add_miner(request: Request):
         save_miners()
         
         return JSONResponse({"success": True, "message": f"Miner '{name}' added successfully"})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+@app.post("/delete-miner")
+async def delete_miner(request: Request):
+    if not is_authenticated(request):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    try:
+        data = await request.json()
+        name = data.get("name", "").strip()
+        if not name:
+            return JSONResponse({"success": False, "error": "Name is required"}, status_code=400)
+        if name not in MINERS:
+            return JSONResponse({"success": False, "error": f"Miner '{name}' not found"}, status_code=404)
+        del MINERS[name]
+        save_miners()
+        return JSONResponse({"success": True, "message": f"Miner '{name}' deleted"})
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)

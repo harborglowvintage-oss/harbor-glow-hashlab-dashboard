@@ -57,7 +57,11 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 - For public deployment, change all default passwords and review your firewall.
 
 ## License
+<<<<<<< HEAD
 MIT (recommended for open-source, but you may choose another license.)
+=======
+Apache License 2.0. See `LICENSE` for full terms.
+>>>>>>> 19ddb35 (Add MineGPT branding, slider controls, and Apache 2.0 licensing)
 
 ## Contributing
 PRs and issues welcome! See [github.com/harborglowvintage-oss](https://github.com/harborglowvintage-oss) for details.

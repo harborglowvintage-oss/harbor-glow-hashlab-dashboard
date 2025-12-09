@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Harbor Glow HashLab Dashboard</title>
+    <link rel="icon" type="image/png" href="/static/img/bolt.png">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/header.css">
+    <script src="/static/header.js" defer></script>
+    <script src="/static/background-orb.js" defer></script>
+    <script src="/static/dashboard.js" defer></script>
+    <script src="/static/gauges.js" defer></script>
+    <script src="/static/hashrate-waves.js" defer></script>
+    <script src="/static/psu-fan.js" defer></script>
+    <script src="/static/header-fans.js" defer></script>
+    <script src="/static/steam-layer.js" defer></script>
+    <script src="/static/network-orb.js" defer></script>
+    <script src="/static/space-effects.js" defer></script>
+    <script src="/static/btc-realtime-orb.js" defer></script>
+    <script src="/static/miner-portal-orb.js" defer></script>
+    <script src="/static/swarmgate-ship-layer.js" defer></script>
+    <!-- Holo partners CSS -->
+    <style>
+.powered-by-badge {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 14px;
+    background: rgba(5, 20, 26, 0.92);
+    border: 1px solid rgba(0, 255, 255, 0.35);
+    box-shadow: 0 0 18px rgba(0, 255, 255, 0.25), inset 0 0 12px rgba(0, 60, 80, 0.4);
+    z-index: 1200;
+}
+.powered-by-badge .badge-label {
+    font-family: 'Share Tech Mono','Orbitron',sans-serif;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #aafcff;
+}
+.powered-by-badge img {
+    width: 140px;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 0 8px rgba(0,255,255,0.4));
+}
+.partners-section { margin-top: 3rem; text-align: center; position: relative; z-index: 5; padding-bottom: 2rem; }
+.partners-section .section-title {
+    font-family: 'Nixie One','Share Tech Mono','Orbitron',sans-serif;
+    font-size: 2.4rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #ffffff;
+    margin-bottom: 1.5rem;
+    padding: 0.85rem 2.4rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+    border: 2px solid rgba(0, 255, 138, 0.6);
+    border-radius: 18px;
+    background: rgba(4, 12, 20, 0.76);
+    box-shadow: 0 0 28px rgba(0,255,138,0.36), inset 0 0 22px rgba(0,60,30,0.56);
+    text-shadow:
+        0 0 14px rgba(0,255,189,0.76),
+        0 0 36px rgba(48,255,255,0.32),
+        0 0 60px rgba(255,150,255,0.2);
+    position: relative;
+    overflow: visible;
+    animation: nixieHueShift 30s linear infinite, nixieTilt 4s ease-in-out infinite;
+}
+@keyframes nixieHueShift {
+    0% {
+        filter: hue-rotate(0deg);
+        text-shadow: 0 0 14px rgba(0,255,189,0.76), 0 0 36px rgba(48,255,255,0.32), 0 0 60px rgba(255,150,255,0.2);
+    }
+    50% {
+        filter: hue-rotate(180deg);
+        text-shadow: 0 0 18px rgba(255,155,0,0.72), 0 0 40px rgba(255,0,204,0.36), 0 0 70px rgba(0,255,255,0.24);
+    }
+    100% {
+        filter: hue-rotate(360deg);
+        text-shadow: 0 0 14px rgba(0,255,189,0.76), 0 0 36px rgba(48,255,255,0.32), 0 0 60px rgba(255,150,255,0.2);
+    }
+}
+@keyframes nixieTilt {
+    0%,100% { transform: rotateX(0deg) rotateY(0deg); }
+    25% { transform: rotateX(2deg) rotateY(-3deg); }
+    50% { transform: rotateX(-1.5deg) rotateY(2deg); }
+    75% { transform: rotateX(1deg) rotateY(3deg); }
+}
+.partners-section .section-title::after {
+    content: '';
+    position: absolute;
+    left: 65%;
+    right: -10%;
+    top: 15%;
+    bottom: 15%;
+    background: linear-gradient(90deg, rgba(0,255,138,0.28), rgba(0,255,138,0));
+    filter: blur(12px);
+    opacity: 0.68;
+    pointer-events: none;
+    z-index: -1;
+}
+.partners-section .section-title .globe-icon {
+    font-size: 1.2em;
+    display: inline-flex;
+    align-items: center;
+    animation: globePulse 2.4s ease-in-out infinite;
+    text-shadow: 0 0 10px rgba(0,255,255,0.72), 0 0 25px rgba(0,255,180,0.56);
+}
+@keyframes globePulse {
+    0% { transform: scale(1) rotate(0deg); opacity: 0.85; }
+    50% { transform: scale(1.15) rotate(8deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 0.85; }
+}
+.partner-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.6rem;
+    max-width: 980px;
+    margin: 0 auto;
+    justify-items: center;
+}
+@media (max-width: 1100px) {
+    .partner-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+@media (max-width: 820px) {
+    .partner-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 520px) {
+    .partner-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.partner-card {
+    position: relative;
+    width: 100%;
+    max-width: 220px;
+    min-width: 190px;
+    padding: 1.25rem 1rem 1.4rem;
+    border-radius: 20px;
+    background: radial-gradient(circle at 30% 20%, rgba(0,255,153,0.08), rgba(9,18,25,0.95));
+    border: 1.5px solid rgba(0,255,138,0.32);
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #f4faff;
+    gap: 0.35rem;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55), 0 0 18px rgba(0,255,138,0.2);
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.partner-card::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 22px;
+    border: 1px solid rgba(0,255,138,0.2);
+    box-shadow: 0 0 18px rgba(0,255,255,0.2);
+    opacity: 0;
+    animation: chargeSweep 3.6s linear infinite;
+    pointer-events: none;
+}
+.partner-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1.5px solid rgba(0,255,138,0.16);
+    background:
+        radial-gradient(circle at 30% 20%, rgba(0, 255, 138, 0.176), transparent 45%),
+        radial-gradient(circle at 70% 80%, rgba(0, 163, 255, 0.144), transparent 55%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+.partner-card:active::before,
+.partner-card:hover::before {
+    opacity: 1;
+}
+.partner-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(0, 255, 138, 0.68);
+    box-shadow: 0 28px 40px rgba(0, 0, 0, 0.65), 0 0 30px rgba(0,255,138,0.4);
+}
+.partner-card:hover::after { opacity: 1; }
+.partner-logo {
+    width: 82px;
+    height: 82px;
+    border-radius: 16px;
+    background: #0d1822;
+    padding: 12px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+    margin-bottom: 0.45rem;
+}
+.partner-name {
+    font-family: 'Share Tech Mono','Audiowide','Eurostile','sans-serif';
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #f7fffb;
+    text-shadow: 0 0 10px rgba(0, 255, 138, 0.6);
+}
+.partner-desc {
+    font-size: 0.9rem;
+    color: #d7f9ff;
+    opacity: 0.9;
+}
+.partner-glow {
+    position: absolute;
+    inset: 12px;
+    border-radius: 16px;
+    background: radial-gradient(circle at top, rgba(0, 255, 138, 0.22), transparent 65%);
+    filter: blur(6px);
+    opacity: 0.4;
+    pointer-events: none;
+}
+.partner-card::after,
+.partner-glow {
+    animation: electricPulse 2.8s ease-in-out infinite;
+}
+@keyframes chargeSweep {
+    0% {
+        opacity: 0;
+        filter: hue-rotate(0deg);
+        box-shadow: 0 0 10px rgba(0,255,138,0.2);
+    }
+    50% {
+        opacity: 0.9;
+        filter: hue-rotate(120deg);
+        box-shadow: 0 0 24px rgba(0,255,255,0.5);
+    }
+    100% {
+        opacity: 0;
+        filter: hue-rotate(240deg);
+        box-shadow: 0 0 10px rgba(0,255,138,0.2);
+    }
+}
+@keyframes electricPulse {
+    0%,100% { opacity: 0.35; transform: scale(1); }
+    50% { opacity: 0.75; transform: scale(1.05); }
+}
+    </style>
+</head>
+
+<body>
+    <!-- Full-screen steam layer -->
+    <canvas id="steam-layer"></canvas>
+    <div class="powered-by-badge">
+        <span class="badge-label">Powered by</span>
+        <img src="/static/img/minergpthashlab-logo.svg" alt="MineGPT HashLab logo">
+    </div>
+    
+    <div class="patch-wires">
+        <div class="patch-wire patch-wire-1"></div>
+        <div class="patch-wire patch-wire-2"></div>
+        <div class="patch-wire patch-wire-3"></div>
+    </div>
+
+    <h1>
+        <div class="h1-vents-top">
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+        </div>
+        <div class="header-logo-frame shell" aria-hidden="true">
+            <img src="/static/img/harbor-glow-vintage.jpg" alt="Harbor Glow Vintage" class="header-logo-inner" />
+            <span class="metal-grain" aria-hidden="true"></span>
+            <span class="metal-highlight" aria-hidden="true"></span>
+            <span class="rim-light" aria-hidden="true"></span>
+            <span class="screw s1" aria-hidden="true"></span>
+            <span class="screw s2" aria-hidden="true"></span>
+            <span class="screw s3" aria-hidden="true"></span>
+            <span class="screw s4" aria-hidden="true"></span>
+        </div>
+        <canvas class="h1-fan-left"></canvas>
+        Harbor Glow HashLab
+        <canvas class="h1-fan-right"></canvas>
+        <div class="h1-vents-bottom">
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+            <div class="vent-slot"></div>
+        </div>
+        <span class="bolt-bottom-left"></span>
+        <span class="bolt-bottom-right"></span>
+    </h1>
+
+    <div class="psu-fan-widget">
+        <div id="psu-fan-container"></div>
+        <div class="psu-info">
+            <div class="psu-label">TOTAL POWER</div>
+            <div id="psu-wattage" class="psu-wattage">0W</div>
+        </div>
+    </div>
+    <!-- Miner Portal Orb Container (floats below wattage fan, does not affect layout) -->
+    <div id="miner-portal-orb-container" style="position:absolute; left:calc(50% + 576px); transform:translateX(-50%); top:calc(220px + 1in); width:220px; height:180px; z-index:200; pointer-events:none;"></div>
+
+    <div id="miners"></div>
+    
+    <!-- FUTURISTIC POWER COST CALCULATOR -->
+    <link rel="stylesheet" href="/static/nixie.css">
+    <script src="/static/nixie.js" defer></script>
+    <div class="power-cost-panel metal-delorean" id="delorean-power-panel">
+        <div class="nixie-fan-vent-row">
+            <div class="nixie-fan-container" style="position:relative;display:inline-block;width:48px;height:48px;">
+                <canvas class="nixie-micro-fan" id="nixie-fan-left" width="48" height="48"></canvas>
+                <div class="nixie-fan-smoke" id="nixie-fan-smoke-left"></div>
+                <div class="nixie-knightrider" id="nixie-knightrider-left"></div>
+            </div>
+            <div style="flex:1;position:relative;">
+                <div class="nixie-led-bar-container"><div class="nixie-led-bar" id="nixie-led-bar"></div></div>
+                <div class="nixie-vent"></div>
+            </div>
+            <div class="nixie-fan-container" style="position:relative;display:inline-block;width:48px;height:48px;">
+                <canvas class="nixie-micro-fan" id="nixie-fan-right" width="48" height="48"></canvas>
+                <div class="nixie-fan-smoke" id="nixie-fan-smoke-right"></div>
+                <div class="nixie-knightrider" id="nixie-knightrider-right"></div>
+            </div>
+        </div>
+        <div class="nixie-smoke" id="nixie-smoke"></div>
+        <div class="delorean-current-time-row nixie-row" style="background:#222;">
+            <span class="delorean-current-label nixie-label">CURRENT</span>
+            <span class="delorean-current-date nixie-digit" id="delorean-current-date">--</span>
+            <span class="delorean-current-time nixie-digit" id="delorean-current-time">--:--:--</span>
+        </div>
+        <div class="nixie-row">
+            <div class="nixie-label">HOURLY</div>
+            <div>
+                <span class="nixie-digit" id="hourly-min">--</span>
+                <span class="nixie-digit" id="hourly-cost">$--.--</span>
+            </div>
+        </div>
+        <div class="nixie-row">
+            <div class="nixie-label">DAILY</div>
+            <div>
+                <span class="nixie-digit" id="daily-day">--</span>
+                <span class="nixie-digit" id="daily-cost">$--.--</span>
+            </div>
+        </div>
+        <div class="nixie-row">
+            <div class="nixie-label">MONTHLY</div>
+            <div>
+                <span class="nixie-digit" id="monthly-month">---</span>
+                <span class="nixie-digit" id="monthly-cost">$--.--</span>
+            </div>
+        </div>
+        <div class="nixie-row">
+            <div class="nixie-label">ANNUAL</div>
+            <div>
+                <span class="nixie-digit" id="annual-year">----</span>
+                <span class="nixie-digit" id="annual-cost">$--.--</span>
+            </div>
+        </div>
+        <div class="nixie-row">
+            <div class="nixie-label">TOTAL</div>
+            <div>
+                <span class="nixie-digit" id="total-kwh">-----</span>
+                <span class="nixie-digit" id="total-cost">$--.--</span>
+            </div>
+        </div>
+        <form id="powerCostForm" autocomplete="off" style="margin-top:12px; text-align:center;">
+            <label for="costPerKwh" style="color:#ff9100; font-family:'NixieOne','Share Tech Mono',monospace; font-size:1.1em;">Cost per kWh ($):</label>
+            <input type="number" id="costPerKwh" name="costPerKwh" min="0" step="0.001" value="0.13" style="margin-left:8px; background:#111; color:#ff9100; border:2px solid #ff9100;">
+        </form>
+    </div>
+    
+    <div class="add-miner-panel">
+        <h3>Add New Miner</h3>
+        <form id="addMinerForm" autocomplete="off">
+            <div class="form-group">
+                <label for="minerName">Miner Name:</label>
+                <input type="text" id="minerName" name="name" placeholder="e.g., MinerG" required>
+            </div>
+            <div class="form-group">
+                <label for="minerIP">IP Address:</label>
+                <input type="text" id="minerIP" name="ip" placeholder="e.g., 192.168.179.185" pattern="^(\d{1,3}\.){3}\d{1,3}$">
+            </div>
+            <div class="form-group action-toggle">
+                <label>Action:</label>
+                <div class="action-options">
+                    <label><input type="radio" name="minerAction" value="add" checked> Add</label>
+                    <label><input type="radio" name="minerAction" value="delete"> Delete</label>
+                </div>
+            </div>
+            <div class="approval-slider">
+                <span class="slider-label" id="sliderLabel">Slide to Execute</span>
+                <input type="range" id="approvalSlider" min="0" max="100" value="0" step="1">
+            </div>
+            <div id="addMinerStatus"></div>
+        </form>
+    </div>
+
+    <!-- Preferred Partners Section (Holographic Style) -->
+    <section class="partners-section">
+        <h2 class="section-title"><span class="globe-icon" aria-hidden="true">🌐</span> Preferred Partners</h2>
+        <div class="partner-grid" id="partner-grid">
+            {% for partner in preferred_partners %}
+                <a href="{{ partner.url }}" target="_blank" rel="noopener noreferrer" class="partner-card" aria-label="Visit {{ partner.name }} (Preferred Vendor)">
+                    <span class="partner-glow" aria-hidden="true"></span>
+                    <img src="{{ partner.logo }}" alt="{{ partner.name }} logo" class="partner-logo" loading="lazy" />
+                    <div class="partner-name">{{ partner.name }}</div>
+                    <div class="partner-desc">{{ partner.description }}</div>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <script>
+        // Debug: log partner plaques count and ensure visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const plaques = document.querySelectorAll('.partner-card');
+                console.log('Partner cards found:', plaques.length);
+                plaques.forEach((p) => {
+                    p.style.zIndex = '5';
+                });
+            } catch (e) { console.error(e); }
+        });
+    </script>
+    
+</body>
+</html>
