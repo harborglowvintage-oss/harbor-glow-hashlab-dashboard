@@ -41,8 +41,12 @@ function minerTriggersOrbSpin(name, miner) {
 }
 
 async function updateMiners() {
+    const minersRoot = document.getElementById("miners");
     try {
-        const res = await fetch("/miner-data");
+        const res = await fetch("/miner-data", { credentials: "include" });
+        if (!res.ok) {
+            throw new Error(`Miner data request failed with status ${res.status}`);
+        }
         const data = await res.json();
 
         const entries = Object.entries(data || {});
@@ -264,7 +268,9 @@ async function updateMiners() {
             </div>
         `;
 
-        document.getElementById("miners").innerHTML = html;
+        if (minersRoot) {
+            minersRoot.innerHTML = html;
+        }
 
         // Calculate total wattage
         const totalWatts = activeMiners.reduce((sum, m) => sum + (m.power || 0), 0);
@@ -282,8 +288,15 @@ async function updateMiners() {
         if (window.updateGauges) window.updateGauges();
 
     } catch (err) {
-        // In production, do not leak errors to console
-        // Optionally, send to a logging endpoint or ignore
+        console.error("Failed to refresh miner data:", err);
+        if (minersRoot) {
+            minersRoot.innerHTML = `
+                <div class="miner-error">
+                    <p>Unable to reach /miner-data. Check that the FastAPI server is running and that LAN access rules allow this client.</p>
+                    <p class="caption">${err?.message || "Network error"}</p>
+                </div>
+            `;
+        }
     }
 }
 
@@ -398,7 +411,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                credentials: 'include'
             });
             const result = await response.json();
             if (result.success) {

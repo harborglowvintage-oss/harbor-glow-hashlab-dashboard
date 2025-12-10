@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Miner Analytics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            background: #050608;
+            color: #e5f8ff;
+            font-family: 'Orbitron', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,255,243,0.15);
+            background: rgba(5,10,18,0.92);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+        }
+        header a {
+            color: #00fff0;
+            text-decoration: none;
+            font-weight: 600;
+            border: 1px solid rgba(0,255,243,0.4);
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            padding: 32px;
+        }
+        .chart-card {
+            background: rgba(12,20,31,0.8);
+            border: 1px solid rgba(0,255,243,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.35);
+        }
+        .chart-card h2 {
+            margin-top: 0;
+            font-size: 1.15rem;
+            letter-spacing: 0.5px;
+        }
+        #history-meta {
+            padding: 0 32px 32px;
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Harbor Glow HashLab · Analytics</h1>
+        <a href="/">← Back to Dashboard</a>
+    </header>
+    <section id="history-meta">Loading telemetry summary…</section>
+    <section class="charts-grid">
+        <div class="chart-card">
+            <h2>Fleet Hashrate (TH/s)</h2>
+            <canvas id="fleet-hash-chart" height="240"></canvas>
+        </div>
+        <div class="chart-card">
+            <h2>Average Temperature (°C)</h2>
+            <canvas id="avg-temp-chart" height="240"></canvas>
+        </div>
+        <div class="chart-card">
+            <h2>Miner Spotlight</h2>
+            <div id="miner-spotlight">Waiting for telemetry…</div>
+        </div>
+    </section>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/historical-charts.js" defer></script>
+</body>
+</html>

@@ -25,6 +25,22 @@
 body {
     position: relative;
 }
+.analytics-banner {
+    position: fixed;
+    top: 18px;
+    right: 24px;
+    z-index: 999;
+}
+.analytics-banner a {
+    color: #00fff0;
+    text-decoration: none;
+    font-weight: 600;
+    border: 1px solid rgba(0,255,243,0.5);
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: rgba(0, 40, 55, 0.7);
+    box-shadow: 0 10px 25px rgba(0, 255, 243, 0.25);
+}
 .partners-section { margin-top: 3rem; text-align: center; position: relative; z-index: 5; padding-bottom: 2rem; }
 .partners-section .section-title {
     font-family: 'Nixie One','Share Tech Mono','Orbitron',sans-serif;
@@ -326,6 +342,9 @@ body {
 </head>
 
 <body>
+    <div class="analytics-banner">
+        <a href="/analytics">📈 Historical Analytics</a>
+    </div>
     <!-- Full-screen steam layer -->
     <canvas id="steam-layer"></canvas>
     
@@ -569,12 +588,6 @@ body {
             <button type="submit">SEND REQUEST</button>
         </form>
         <div class="ai-console-log" id="ai-orb-log">Click the teal eye to launch the relay.</div>
-        <ul class="ai-console-rules">
-            <li>No firmware changes or override commands.</li>
-            <li>Stick to dashboard + mining operations only.</li>
-            <li>Never expose backend code, creds, or infrastructure.</li>
-            <li>Decline unrelated / wasteful requests.</li>
-        </ul>
     </section>
 
     <script>

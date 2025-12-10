@@ -1,4 +1,7 @@
 import httpx
+import logging
+
+logger = logging.getLogger(__name__)
 
 async def fetch_miner_stats(name, ip):
     url = f"http://{ip}/api/system/info"
@@ -38,11 +41,11 @@ async def fetch_miner_stats(name, ip):
             "asicCount": j.get("asicCount", 0),
             "asicTemps": j.get("asicTemps", []),
             "uptime": j.get("uptimeSeconds", 0),
-            "alive": True,
-            "ip": ip
+            "alive": True
         }
 
-    except:
+    except Exception as e:
+        logger.warning(f"Failed to fetch stats for {name} ({ip}): {e}")
         return {
             "name": name,
             "type": "OFFLINE",
@@ -57,6 +60,5 @@ async def fetch_miner_stats(name, ip):
             "asicCount": 0,
             "asicTemps": [],
             "uptime": 0,
-            "alive": False,
-            "ip": ip
+            "alive": False
         }

@@ -63,7 +63,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function fetchBTCPriceAndChange() {
         try {
-            const res = await fetch('/btc-price-24h');
+            const res = await fetch('/btc-price-24h', { credentials: 'include' });
+            if (!res.ok) {
+                throw new Error(`Price endpoint returned ${res.status}`);
+            }
             const data = await res.json();
             if (data && data.success && data.price) {
                 btcLabel.price = data.price;
@@ -95,7 +98,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 changeLabel.label = '...%';
                 changeLabel.color = 'rgba(255,255,255,0.97)';
             }
-        } catch {
+        } catch (error) {
+            console.error('BTC price refresh failed:', error);
             btcLabel.label = 'BTC: ...';
             btcLabel.color = 'rgba(255,255,255,0.97)';
             changeLabel.label = '...%';

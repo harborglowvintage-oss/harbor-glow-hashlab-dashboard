@@ -1,8 +1,9 @@
 import asyncio
 import csv
+from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 DATA_DIR = Path('data_logs')
 DATA_FILE = DATA_DIR / 'miner_metrics.csv'
@@ -52,3 +53,34 @@ async def log_miner_metrics(miner_stats: Dict[str, Dict[str, Any]]):
         return
     async with _lock:
         await asyncio.to_thread(_write_rows, miner_stats)
+
+
+def _cast_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        'timestamp': row.get('timestamp'),
+        'name': row.get('name'),
+        'hashrate_1m': float(row.get('hashrate_1m', 0) or 0),
+        'hashrate_24h': float(row.get('hashrate_24h', 0) or 0),
+        'power': float(row.get('power', 0) or 0),
+        'efficiency': float(row.get('efficiency', 0) or 0),
+        'temp': float(row.get('temp', 0) or 0),
+        'chipTemp': float(row.get('chipTemp', 0) or 0),
+        'sharesAccepted': int(row.get('sharesAccepted', 0) or 0),
+        'sharesRejected': int(row.get('sharesRejected', 0) or 0),
+        'alive': str(row.get('alive', '')).lower() in {'true', '1', 'yes'}
+    }
+
+
+def load_recent_metrics(limit: int = 288) -> List[Dict[str, Any]]:
+    """
+    Return the most recent miner metric rows for analytics/AI. Default keeps
+    roughly 24h of data if logging every 5 minutes (288 samples).
+    """
+    if limit <= 0 or not DATA_FILE.exists():
+        return []
+    buffer: deque = deque(maxlen=limit)
+    with DATA_FILE.open('r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            buffer.append(_cast_row(row))
+    return list(buffer)

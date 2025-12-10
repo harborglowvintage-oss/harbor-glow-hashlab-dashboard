@@ -29,6 +29,9 @@
         const openPanel = () => {
             panel.classList.add('open');
             positionPanel();
+            if (log) {
+                log.textContent = 'What miner data do we want to pull first?';
+            }
             setTimeout(() => textarea && textarea.focus(), 150);
         };
         const closePanel = () => {
@@ -63,8 +66,12 @@
                 const res = await fetch('/ai-assist', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ provider, question })
+                    body: JSON.stringify({ provider, question }),
+                    credentials: 'include'
                 });
+                if (!res.ok) {
+                    throw new Error(`AI endpoint returned ${res.status}`);
+                }
                 const data = await res.json();
                 if (!res.ok || !data.success) {
                     throw new Error(data.error || data.message || 'Relay failed');

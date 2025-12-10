@@ -1,72 +1,48 @@
 # Harbor Glow HashLab Dashboard
 
-A secure, real-time dashboard for monitoring and managing Bitcoin miners. Built with FastAPI, Jinja2, and modern JavaScript/CSS. Designed for LAN and public deployment with strong security defaults.
+A FastAPI-based cryptocurrency mining dashboard with real-time monitoring and analytics.
 
----
+## Render Deployment
 
-## 🚀 Features
-- Real-time miner stats: hashrate, temps, efficiency, power, shares
-- Cyberpunk UI with animated gauges and fans
-- Add/remove miners via web interface
-- Secure login required for dashboard and API access
-- LAN-only by default; external access requires HTTPS and authentication
-- Miner IPs and sensitive config data never exposed to frontend
-- Open-source friendly with MIT license
+This application is configured for easy deployment on Render.
 
----
+### Quick Deploy
 
-## 🔐 Security Highlights
-- Login required for all routes (dashboard + API)
-- LAN-only connections unless configured otherwise
-- Passwords are hashed with `bcrypt`
-- No secrets, IPs, or credentials stored in frontend
-- All inputs and API data sanitized to prevent XSS/injection
+1. Fork this repository to your GitHub account
+2. Connect your GitHub account to Render
+3. Create a new Web Service from your forked repository
+4. Use these settings:
+   - **Runtime**: Python 3
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
 
----
+### Environment Variables
 
-## ⚙️ Quick Start
+Set these environment variables in your Render service:
 
-### 1. Install Dependencies
+- `LAN_ONLY_MODE=false` - Disable LAN restrictions for cloud deployment
+- `DATA_LOG_INTERVAL=60` - Metrics logging interval (seconds)
+- `AI_HISTORY_LIMIT=288` - Historical data limit for AI analysis
+
+### Default Credentials
+
+- **Username**: admin
+- **Password**: changeme123
+
+⚠️ **Security Note**: Change the default password in `auth_config.json` before deploying to production.
+
+## Local Development
+
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
-### 2. Run the Server
-```bash
-uvicorn main:app --reload
-# Or for LAN/public:
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
-### 3. Open the Dashboard
-- Local: http://127.0.0.1:8000/
-- LAN: http://<your-ip>:8000/
 
-### 4. Login
-- Default username: `admin`
-- Default password: `changeme123`
-- Change these in `auth_config.json` after first run.
+## Features
 
----
-
-## Configuration
-- **Miners:** Edit `miners_config.json` or use the Add Miner panel.
-- **Authentication:** Edit `auth_config.json` for your admin credentials.
-- **Static assets:** Place images/fonts in `static/` as needed.
-
-## Deployment
-- For HTTPS, use a reverse proxy (nginx, Caddy) or FastAPI's SSL support.
-- For public deployment, change all default passwords and review your firewall.
-
-## License
-<<<<<<< HEAD
-MIT (recommended for open-source, but you may choose another license.)
-=======
-Apache License 2.0. See `LICENSE` for full terms.
->>>>>>> 19ddb35 (Add MineGPT branding, slider controls, and Apache 2.0 licensing)
-
-## Contributing
-PRs and issues welcome! See [github.com/harborglowvintage-oss](https://github.com/harborglowvintage-oss) for details.
-
----
-**No miner firmware is ever modified. This dashboard is 100% safe for your hardware.**
+- Real-time miner monitoring
+- Power cost calculations
+- Historical analytics
+- AI-assisted troubleshooting
+- Partner recommendations
+- Responsive cyberpunk UI

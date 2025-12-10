@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: harbor-glow-hashlab
+    runtime: python3
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PORT
+        generateValue: true
+      - key: LAN_ONLY_MODE
+        value: false
+      - key: DATA_LOG_INTERVAL
+        value: 60
+      - key: AI_HISTORY_LIMIT
+        value: 288
+      - key: AI_TEMP_THRESHOLD
+        value: 78
+      - key: AI_EFFICIENCY_THRESHOLD
+        value: 42
+      - key: AI_REJECT_THRESHOLD
+        value: 2
