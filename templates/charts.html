@@ -5,17 +5,33 @@
     <title>Miner Analytics</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/header.css">
+    <script src="/static/hashrate-waves.js" defer></script>
     <style>
         body {
+            position: relative;
             background: #050608;
             color: #e5f8ff;
-            font-family: 'Orbitron', 'Segoe UI', sans-serif;
+            font-family: 'Share Tech Mono', 'Orbitron', 'Segoe UI', sans-serif;
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background-image: radial-gradient(circle at top, rgba(0, 255, 243, 0.15), transparent 45%),
-                radial-gradient(circle at 20% 20%, rgba(255, 0, 153, 0.07), transparent 35%);
-            position: relative;
+        }
+        #wave-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        #wave-background canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
         }
         header {
             padding: 24px 32px;
@@ -117,28 +133,75 @@
             }
         }
     </style>
-            }
-            .chart-card {
-                min-height: 280px;
-            }
-        }
-        @media (max-width: 480px) {
-            header {
-                padding: 16px;
-            }
-            .analytics-shell {
-                padding: 24px 16px 48px;
-            }
-        }
-    </style>
 </head>
 <body>
+    <div id="wave-background"></div>
     <header>
         <h1>Harbor Glow HashLab · Analytics</h1>
         <a href="/">← Back to Dashboard</a>
     </header>
     <main class="analytics-shell">
         <section id="history-meta">Loading telemetry summary…</section>
+        
+        <!-- Live Data Widgets Row -->
+        <section class="widgets-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin: 24px 0;">
+            <!-- Electricity Rate Tracker -->
+            <div class="widget-card" style="background: rgba(12,20,31,0.8); border: 1px solid rgba(0,255,243,0.2); border-radius: 16px; padding: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.35);">
+                <h3 style="margin: 0 0 16px 0; color: #00fff0; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.5rem;">⚡</span> Electricity Rate
+                </h3>
+                <div id="electricity-data">
+                    <div class="rate-value" style="font-size: 2rem; font-weight: bold; color: #0ff; margin: 8px 0;">--</div>
+                    <div class="rate-unit" style="color: #9bdcff; font-size: 0.9rem;">$/kWh</div>
+                    <div class="rate-provider" style="color: #7af0a0; margin-top: 8px; font-size: 0.85rem;">Detecting location...</div>
+                    <div class="rate-updated" style="color: rgba(255,255,255,0.5); margin-top: 4px; font-size: 0.75rem;">--</div>
+                    <div class="rate-cost-per-th" style="color: #ffb347; margin-top: 12px; font-size: 0.85rem; padding-top: 12px; border-top: 1px solid rgba(0,255,243,0.1);">
+                        Cost per TH/s: <span style="font-weight: bold;">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bitcoin Halving Tracker -->
+            <div class="widget-card" style="background: rgba(12,20,31,0.8); border: 1px solid rgba(255,179,71,0.2); border-radius: 16px; padding: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.35);">
+                <h3 style="margin: 0 0 16px 0; color: #ffb347; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.5rem;">🪙</span> Bitcoin Halving
+                </h3>
+                <div id="halving-data">
+                    <div class="halving-countdown" style="font-size: 1.8rem; font-weight: bold; color: #ffb347; margin: 8px 0;">--d --h --m</div>
+                    <div class="halving-label" style="color: #9bdcff; font-size: 0.85rem; margin-bottom: 12px;">Until next halving</div>
+                    <div class="halving-block" style="color: #7af0a0; font-size: 0.85rem;">Current block: <span style="font-weight: bold;">---,---</span></div>
+                    <div class="halving-target" style="color: rgba(255,255,255,0.6); font-size: 0.8rem; margin-top: 4px;">Target: 840,000</div>
+                    <div class="halving-date" style="color: #ff6b81; margin-top: 12px; font-size: 0.85rem; padding-top: 12px; border-top: 1px solid rgba(255,179,71,0.1);">
+                        Est. date: <span style="font-weight: bold;">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Weather Tracker -->
+            <div class="widget-card" style="background: rgba(12,20,31,0.8); border: 1px solid rgba(122,240,160,0.2); border-radius: 16px; padding: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.35);">
+                <h3 style="margin: 0 0 16px 0; color: #7af0a0; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.5rem;">☁️</span> Weather
+                </h3>
+                <div id="weather-data">
+                    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                        <div class="weather-icon" style="font-size: 3rem;">--</div>
+                        <div>
+                            <div class="weather-temp" style="font-size: 2rem; font-weight: bold; color: #7af0a0;">--°</div>
+                            <div class="weather-condition" style="color: #9bdcff; font-size: 0.85rem;">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="weather-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem; color: rgba(255,255,255,0.7);">
+                        <div>Humidity: <span class="weather-humidity" style="color: #58b2ff; font-weight: bold;">--%</span></div>
+                        <div>Wind: <span class="weather-wind" style="color: #58b2ff; font-weight: bold;">-- mph</span></div>
+                    </div>
+                    <div class="weather-alert" style="margin-top: 12px; padding: 8px; border-radius: 8px; background: rgba(255,107,129,0.1); border: 1px solid rgba(255,107,129,0.3); color: #ff6b81; font-size: 0.8rem; display: none;">
+                        ⚠️ High temperature warning
+                    </div>
+                    <div class="weather-location" style="color: rgba(255,255,255,0.4); margin-top: 8px; font-size: 0.75rem;">--</div>
+                </div>
+            </div>
+        </section>
+        
         <section class="charts-grid">
             <div class="chart-card">
                 <h2>Fleet Hashrate (TH/s)</h2>
@@ -188,6 +251,163 @@
     </main>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/static/historical-charts.js?v=2" defer></script>
-    <script src="/static/hashrate-waves.js" defer></script>
+    
+    <!-- Live Data Widgets Scripts -->
+    <script>
+    // ⚡ Electricity Rate Tracker
+    (async function initElectricityRate() {
+        const container = document.getElementById('electricity-data');
+        const rateValue = container.querySelector('.rate-value');
+        const rateProvider = container.querySelector('.rate-provider');
+        const rateUpdated = container.querySelector('.rate-updated');
+        const rateCostPerTh = container.querySelector('.rate-cost-per-th span');
+        
+        try {
+            // Get user's location via IP
+            const ipRes = await fetch('https://ipapi.co/json/');
+            const ipData = await ipRes.json();
+            const { city, region, country_name, postal } = ipData;
+            
+            // TODO: Replace with your NREL API key from https://developer.nrel.gov/signup/
+            const NREL_API_KEY = 'DEMO_KEY'; // Limited to 30 requests/hour
+            
+            // Fetch electricity rates (using demo key for now)
+            const rateRes = await fetch(`https://developer.nrel.gov/api/utility_rates/v3.json?api_key=${NREL_API_KEY}&address=${city},${region}`);
+            const rateData = await rateRes.json();
+            
+            const rate = rateData.outputs?.residential || 0.12; // Fallback to $0.12/kWh
+            const avgPowerPerTh = 120; // watts per TH/s (adjust based on your miners)
+            const costPerTh = (rate * (avgPowerPerTh / 1000) * 24 * 30).toFixed(2); // Monthly cost
+            
+            rateValue.textContent = rate.toFixed(4);
+            rateProvider.textContent = `${city}, ${region}`;
+            rateUpdated.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+            rateCostPerTh.textContent = `$${costPerTh}/mo per TH/s`;
+            
+        } catch (err) {
+            console.error('Electricity rate error:', err);
+            rateValue.textContent = '0.12';
+            rateProvider.textContent = 'US Average (manual fallback)';
+            rateCostPerTh.textContent = '$8.64/mo per TH/s';
+        }
+    })();
+
+    // 🪙 Bitcoin Halving Tracker
+    (async function initHalvingTracker() {
+        const container = document.getElementById('halving-data');
+        const countdown = container.querySelector('.halving-countdown');
+        const blockSpan = container.querySelector('.halving-block span');
+        const dateSpan = container.querySelector('.halving-date span');
+        
+        const TARGET_BLOCK = 840000;
+        const AVG_BLOCK_TIME = 10 * 60 * 1000; // 10 minutes in ms
+        
+        try {
+            // Fetch current block height from mempool.space
+            const res = await fetch('https://mempool.space/api/blocks/tip/height');
+            const currentBlock = await res.json();
+            
+            const blocksRemaining = TARGET_BLOCK - currentBlock;
+            const msRemaining = blocksRemaining * AVG_BLOCK_TIME;
+            const halvingDate = new Date(Date.now() + msRemaining);
+            
+            blockSpan.textContent = currentBlock.toLocaleString();
+            dateSpan.textContent = halvingDate.toLocaleDateString('en-US', { 
+                month: 'short', day: 'numeric', year: 'numeric' 
+            });
+            
+            // Update countdown every minute
+            function updateCountdown() {
+                const now = Date.now();
+                const diff = halvingDate - now;
+                
+                if (diff <= 0) {
+                    countdown.textContent = 'Halved!';
+                    return;
+                }
+                
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                
+                countdown.textContent = `${days}d ${hours}h ${minutes}m`;
+            }
+            
+            updateCountdown();
+            setInterval(updateCountdown, 60000); // Update every minute
+            
+        } catch (err) {
+            console.error('Halving tracker error:', err);
+            countdown.textContent = 'Error loading';
+            blockSpan.textContent = '--';
+        }
+    })();
+
+    // ☁️ Live Weather Tracker
+    (async function initWeather() {
+        const container = document.getElementById('weather-data');
+        const icon = container.querySelector('.weather-icon');
+        const temp = container.querySelector('.weather-temp');
+        const condition = container.querySelector('.weather-condition');
+        const humidity = container.querySelector('.weather-humidity');
+        const wind = container.querySelector('.weather-wind');
+        const alert = container.querySelector('.weather-alert');
+        const location = container.querySelector('.weather-location');
+        
+        // TODO: Replace with your OpenWeatherMap API key from https://openweathermap.org/api
+        const OPENWEATHER_API_KEY = 'DEMO_KEY'; // Get free key at openweathermap.org
+        
+        try {
+            // Get user's location via IP
+            const ipRes = await fetch('https://ipapi.co/json/');
+            const ipData = await ipRes.json();
+            const { latitude, longitude, city, region } = ipData;
+            
+            // Fetch weather data
+            const weatherRes = await fetch(
+                `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}&units=imperial`
+            );
+            const weather = await weatherRes.json();
+            
+            const weatherIcons = {
+                'Clear': '☀️',
+                'Clouds': '☁️',
+                'Rain': '🌧️',
+                'Snow': '❄️',
+                'Thunderstorm': '⛈️',
+                'Drizzle': '🌦️',
+                'Mist': '🌫️',
+                'Fog': '🌫️'
+            };
+            
+            const tempF = Math.round(weather.main.temp);
+            const weatherMain = weather.weather[0]?.main || 'Clear';
+            
+            icon.textContent = weatherIcons[weatherMain] || '🌤️';
+            temp.textContent = `${tempF}°F`;
+            condition.textContent = weather.weather[0]?.description || '--';
+            humidity.textContent = `${weather.main.humidity}%`;
+            wind.textContent = `${Math.round(weather.wind.speed)} mph`;
+            location.textContent = `${city}, ${region}`;
+            
+            // Show heat warning if temp > 85°F (can affect miner cooling)
+            if (tempF > 85) {
+                alert.style.display = 'block';
+                alert.textContent = `⚠️ High ambient temp (${tempF}°F) - monitor miner cooling`;
+            }
+            
+        } catch (err) {
+            console.error('Weather error:', err);
+            if (OPENWEATHER_API_KEY === 'DEMO_KEY') {
+                temp.textContent = '--°';
+                condition.textContent = 'API key required';
+                location.textContent = 'Get free key at openweathermap.org';
+            } else {
+                temp.textContent = '--°';
+                condition.textContent = 'Error loading weather';
+            }
+        }
+    })();
+    </script>
 </body>
 </html>
