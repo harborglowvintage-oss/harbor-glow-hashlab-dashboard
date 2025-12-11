@@ -92,6 +92,12 @@ async def fetch_miner_stats(name: str, ip: str) -> Dict[str, Any]:
             "asicCount": data.get("asicCount", 0),
             "asicTemps": data.get("asicTemps", []),
             "uptime": data.get("uptimeSeconds", 0),
+            "fanrpm": data.get("fanrpm", data.get("fanSpeed", 0)),
+            "frequency": data.get("frequency", 0),
+            "voltage": data.get("coreVoltageActual", data.get("voltage", 0)),
+            "wifiRSSI": data.get("wifiRSSI", 0),
+            "bestDiff": data.get("bestDiff", data.get("bestSessionDiff", 0)),
+            "poolDifficulty": data.get("poolDifficulty", data.get("stratumDifficulty", 0)),
             "alive": True,
         }
         miner_payload["status"] = _determine_status(miner_payload, alive=True)

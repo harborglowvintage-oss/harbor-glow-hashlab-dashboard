@@ -1060,7 +1060,7 @@ async def analytics_claude_insights(request: Request):
             })
         
         # 7. Fan Speed & Cooling System
-        fan_speeds = [m.get("fanSpeed", 0) for m in online if m.get("fanSpeed")]
+        fan_speeds = [m.get("fanrpm", 0) for m in online if m.get("fanrpm")]
         if fan_speeds:
             avg_fan = sum(fan_speeds) / len(fan_speeds)
             min_fan = min(fan_speeds)
