@@ -1,4 +1,4 @@
-// Hashrate wave visualization - lightning bolt effect centered
+// Hashrate wave visualization - centered and responsive
 (function() {
     const canvas = document.createElement('canvas');
     canvas.id = 'hashrate-waves';
@@ -8,10 +8,21 @@
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.pointerEvents = 'none';
-    canvas.style.zIndex = '0';
+    canvas.style.zIndex = '1'; // Behind content but visible
     canvas.style.opacity = '0.5';
     
     document.body.insertBefore(canvas, document.body.firstChild);
+    
+    // Ensure main content is above the waves
+    document.addEventListener('DOMContentLoaded', () => {
+        const header = document.querySelector('header');
+        const main = document.querySelector('main');
+        if (header) header.style.position = 'relative';
+        if (main) {
+            main.style.position = 'relative';
+            main.style.zIndex = '2';
+        }
+    });
     
     const ctx = canvas.getContext('2d');
     let width, height;
@@ -40,15 +51,22 @@
     ];
     
     const waves = [];
-    const centerY = () => height / 2;
-    let totalMinerCount = 7; // Track total number of miners for spacing calculation
+    let totalMinerCount = 0;
+    
+    function getWaveYPosition(index, total) {
+        // Distribute waves evenly across viewable area, centered vertically
+        if (total <= 1) return height / 2;
+        const spacing = height / (total + 1);
+        return (index + 1) * spacing;
+    }
     
     function createWaves() {
         waves.length = 0;
         
         if (!window.latestMinerData) {
-            totalMinerCount = 7;
-            for (let i = 0; i < 7; i++) {
+            totalMinerCount = 8;
+            for (let i = 0; i < 8; i++) {
+                const yPos = getWaveYPosition(i, 8);
                 waves.push({
                     amplitude: 25 + (i * 3),
                     frequency: 0.004,
@@ -56,9 +74,10 @@
                     speed: 0.04 + (i * 0.005),
                     color: colors[i % colors.length],
                     hashrate: 0,
-                    verticalOffset: (i - 3) * 8,
+                    yPosition: yPos,
                     secondaryPhase: (i * Math.PI / 3.5),
-                    index: i
+                    index: i,
+                    name: ''
                 });
             }
         } else {
@@ -66,6 +85,7 @@
             totalMinerCount = miners.length;
             miners.forEach((miner, i) => {
                 const hashrate = miner.hashrate_1m || 0;
+                const yPos = getWaveYPosition(i, miners.length);
                 waves.push({
                     amplitude: 20 + (hashrate * 2.5),
                     frequency: 0.004,
@@ -73,8 +93,8 @@
                     speed: 0.035 + (hashrate * 0.002),
                     color: colors[i % colors.length],
                     hashrate: hashrate,
-                    name: miner.name,
-                    verticalOffset: (i - (miners.length - 1) / 2) * 10,
+                    name: miner.name || '',
+                    yPosition: yPos,
                     secondaryPhase: (i * Math.PI / 3.5),
                     index: i
                 });
@@ -83,17 +103,15 @@
     }
     
     function drawWave(wave, time) {
-        const center = centerY();
-        
         ctx.beginPath();
         ctx.strokeStyle = wave.color;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
         ctx.shadowColor = wave.color;
         ctx.shadowBlur = 15;
         
-        // Optimized: step by 3 instead of 2
-        for (let x = 0; x < width; x += 3) {
-            const baseY = center + wave.verticalOffset;
+        // Draw wave from left to right
+        for (let x = 0; x <= width; x += 3) {
+            const baseY = wave.yPosition;
             
             // Primary wave
             const primaryOscillation = Math.sin(x * wave.frequency + time * wave.speed + wave.phase) * wave.amplitude;
@@ -114,10 +132,8 @@
         ctx.stroke();
         ctx.shadowBlur = 0;
         
-        // Add glow effect
-        ctx.strokeStyle = wave.color.replace('0.7', '0.3');
-        ctx.lineWidth = 6;
         ctx.stroke();
+        ctx.shadowBlur = 0;
         
         // Draw machine tag labels - evenly spaced based on number of machines
         if (wave.name) {
@@ -133,7 +149,7 @@
                 const labelX = ((time * flowSpeed * 100 + tagOffset + t * width) % (width + 200)) - 100;
                 
                 // Calculate Y position at this X coordinate
-                const baseY = center + wave.verticalOffset;
+                const baseY = wave.yPosition;
                 const primaryOsc = Math.sin(labelX * wave.frequency + time * wave.speed + wave.phase) * wave.amplitude;
                 const secondaryOsc = Math.sin(labelX * wave.frequency * 1.7 - time * wave.speed * 0.7 + wave.secondaryPhase) * (wave.amplitude * 0.3);
                 const labelY = baseY + primaryOsc + secondaryOsc;
@@ -179,6 +195,9 @@
                     const hashrate = miners[i].hashrate_1m || 0;
                     wave.amplitude = 20 + (hashrate * 2.5);
                     wave.speed = 0.035 + (hashrate * 0.002);
+                    wave.name = miners[i].name || '';
+                    // Update Y position for dynamic miner count
+                    wave.yPosition = getWaveYPosition(i, miners.length);
                 }
             });
         } else if (waves.length === 0) {
