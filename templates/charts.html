@@ -12,6 +12,9 @@
             font-family: 'Orbitron', 'Segoe UI', sans-serif;
             margin: 0;
             padding: 0;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at top, rgba(0, 255, 243, 0.15), transparent 45%),
+                radial-gradient(circle at 20% 20%, rgba(255, 0, 153, 0.07), transparent 35%);
         }
         header {
             padding: 24px 32px;
@@ -36,12 +39,21 @@
             border: 1px solid rgba(0,255,243,0.4);
             padding: 8px 16px;
             border-radius: 20px;
+            transition: transform 0.2s ease;
+        }
+        header a:hover {
+            transform: translateY(-1px);
+        }
+        .analytics-shell {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px clamp(16px, 5vw, 48px) 64px;
         }
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
-            padding: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 32px;
+            margin-top: 24px;
         }
         .chart-card {
             background: rgba(12,20,31,0.8);
@@ -49,16 +61,55 @@
             border-radius: 16px;
             padding: 20px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.35);
+            backdrop-filter: blur(8px);
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
         }
         .chart-card h2 {
             margin-top: 0;
             font-size: 1.15rem;
             letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        canvas {
+            width: 100% !important;
+            max-height: 260px;
+        }
+        #miner-spotlight {
+            line-height: 1.4;
         }
         #history-meta {
-            padding: 0 32px 32px;
             font-size: 0.95rem;
             opacity: 0.9;
+            padding: 20px;
+            border-radius: 14px;
+            border: 1px solid rgba(0,255,243,0.12);
+            background: rgba(5, 12, 20, 0.65);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        }
+        @media (max-width: 800px) {
+            header {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .chart-card {
+                min-height: 280px;
+            }
+        }
+        @media (max-width: 480px) {
+            header {
+                padding: 16px;
+            }
+            .analytics-shell {
+                padding: 24px 16px 48px;
+            }
         }
     </style>
 </head>
@@ -67,22 +118,57 @@
         <h1>Harbor Glow HashLab · Analytics</h1>
         <a href="/">← Back to Dashboard</a>
     </header>
-    <section id="history-meta">Loading telemetry summary…</section>
-    <section class="charts-grid">
-        <div class="chart-card">
-            <h2>Fleet Hashrate (TH/s)</h2>
-            <canvas id="fleet-hash-chart" height="240"></canvas>
-        </div>
-        <div class="chart-card">
-            <h2>Average Temperature (°C)</h2>
-            <canvas id="avg-temp-chart" height="240"></canvas>
-        </div>
-        <div class="chart-card">
-            <h2>Miner Spotlight</h2>
-            <div id="miner-spotlight">Waiting for telemetry…</div>
-        </div>
-    </section>
+    <main class="analytics-shell">
+        <section id="history-meta">Loading telemetry summary…</section>
+        <section class="charts-grid">
+            <div class="chart-card">
+                <h2>Fleet Hashrate (TH/s)</h2>
+                <canvas id="fleet-hash-chart" height="240"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Average Temperature (°C)</h2>
+                <canvas id="avg-temp-chart" height="240"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Miner Spotlight</h2>
+                <div id="miner-spotlight">Waiting for telemetry…</div>
+            </div>
+            <div class="chart-card">
+                <h2>Miner Hashrate + Temp Overlay</h2>
+                <canvas id="miner-hash-temp-chart" height="240"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Reject Rate (%) Over Time</h2>
+                <canvas id="reject-rate-chart" height="240"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Hashrate vs Efficiency (Scatter)</h2>
+                <canvas id="hashrate-eff-chart" height="240"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Fleet Availability Timeline</h2>
+                <canvas id="availability-chart" height="240"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Temperature Distribution</h2>
+                <canvas id="temp-hist-chart" height="240"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Hashrate Contribution Share</h2>
+                <canvas id="hashrate-share-chart" height="240"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Power Usage vs BTC Price</h2>
+                <canvas id="power-btc-chart" height="240"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>24h Efficiency Delta</h2>
+                <canvas id="efficiency-delta-chart" height="240"></canvas>
+            </div>
+        </section>
+    </main>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/static/historical-charts.js" defer></script>
+    <script src="/static/historical-charts.js?v=2" defer></script>
+    <script src="/static/hashrate-waves.js" defer></script>
 </body>
 </html>

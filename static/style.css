@@ -1141,6 +1141,29 @@ h1 .bolt-bottom-right {
     z-index: 1;
 }
 
+.miner-status {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 6px;
+    color: #9efcff !important;
+    text-shadow: 0 0 6px rgba(158, 252, 255, 0.8);
+}
+
+.miner-status.status-hot {
+    color: #ff7a7a !important;
+    text-shadow: 0 0 6px rgba(255, 95, 95, 0.7);
+}
+
+.miner-status.status-reject {
+    color: #ffd27f !important;
+    text-shadow: 0 0 6px rgba(255, 210, 127, 0.7);
+}
+
+.miner-status.status-offline {
+    color: #ff9ed1 !important;
+    text-shadow: 0 0 6px rgba(255, 158, 209, 0.6);
+}
+
 /* Minimal badges for top performers */
 .badge-hashrate {
     position: absolute;
@@ -1891,11 +1914,4 @@ canvas.gauge {
 #addMinerStatus.error {
     color: #ff4444;
     text-shadow: 0 0 8px #ff0000;
-}
-
-@font-face {
-    font-family: 'NixieOne';
-    src: url('/static/fonts/NixieOne.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
 }

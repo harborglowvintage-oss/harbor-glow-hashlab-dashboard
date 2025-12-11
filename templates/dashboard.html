@@ -20,26 +20,166 @@
     <script src="/static/miner-portal-orb.js" defer></script>
     <script src="/static/swarmgate-ship-layer.js" defer></script>
     <script src="/static/ai-orb-console.js" defer></script>
+    <script src="/static/analytics-orb.js" defer></script>
     <!-- Holo partners CSS -->
     <style>
 body {
     position: relative;
 }
-.analytics-banner {
+#matrix-infinity {
     position: fixed;
-    top: 18px;
-    right: 24px;
-    z-index: 999;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+    mix-blend-mode: screen;
 }
-.analytics-banner a {
-    color: #00fff0;
-    text-decoration: none;
-    font-weight: 600;
-    border: 1px solid rgba(0,255,243,0.5);
-    padding: 10px 18px;
+#matrix-infinity .grid-floor {
+    position: absolute;
+    left: 50%;
+    bottom: -140px;
+    width: 220vw;
+    height: 220vh;
+    transform: perspective(950px) rotateX(78deg) translateX(-50%);
+    background:
+        repeating-linear-gradient(
+            to right,
+            rgba(120, 255, 170, 0.16) 0,
+            rgba(120, 255, 170, 0.16) 2px,
+            transparent 2px,
+            transparent 32px
+        ),
+        repeating-linear-gradient(
+            to top,
+            rgba(120, 255, 170, 0.18) 0,
+            rgba(120, 255, 170, 0.18) 2px,
+            transparent 2px,
+            transparent 28px
+        ),
+        radial-gradient(ellipse at center, rgba(80, 255, 200, 0.08), rgba(20, 40, 60, 0.18) 55%, rgba(0, 0, 0, 0));
+    filter: drop-shadow(0 0 20px rgba(120, 255, 170, 0.4));
+    animation: gridDrift 16s linear infinite;
+    opacity: 0.7;
+}
+#matrix-infinity .mirror-haze {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 40%, rgba(150, 255, 220, 0.08), rgba(10, 10, 20, 0.85));
+    mix-blend-mode: screen;
+    animation: hazePulse 8s ease-in-out infinite;
+}
+@keyframes gridDrift {
+    0% { transform: perspective(950px) rotateX(78deg) translateX(-50%) translateZ(0); }
+    100% { transform: perspective(950px) rotateX(78deg) translateX(-50%) translateZ(-160px); }
+}
+@keyframes hazePulse {
+    0%, 100% { opacity: 0.55; filter: blur(0px); }
+    50% { opacity: 0.8; filter: blur(1px); }
+}
+#analytics-orb-stack {
+    position: fixed;
+    right: 26px;
+    bottom: 482px;
+    width: 150px;
+    z-index: 1100;
+    pointer-events: none;
+}
+.analytics-orb-console {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(151,104,255,0.28) 0%, rgba(40,12,78,0.78) 60%, rgba(8,0,25,0.95) 100%);
+    box-shadow:
+        0 0 28px rgba(169,134,255,0.45),
+        inset 0 0 18px rgba(255,255,255,0.12);
+    overflow: visible;
+    pointer-events: auto;
+}
+#analytics-orb-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+.analytics-orb-link {
+    position: absolute;
+    inset: 24px;
     border-radius: 999px;
-    background: rgba(0, 40, 55, 0.7);
-    box-shadow: 0 10px 25px rgba(0, 255, 243, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: 'Share Tech Mono','Orbitron',sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #ffffff;
+    text-decoration: none;
+    box-shadow: 0 0 20px rgba(187,146,255,0.55);
+    border: 1px solid rgba(233,221,255,0.35);
+    backdrop-filter: blur(6px);
+    text-shadow:
+        0 0 8px rgba(255,255,255,0.5),
+        0 0 14px rgba(189,120,255,0.8);
+    animation: analyticsLinkPulse 3s ease-in-out infinite;
+}
+.analytics-orb-lettering {
+    position: absolute;
+    inset: -30px;
+    width: 200px;
+    height: 200px;
+    pointer-events: none;
+    z-index: 205;
+}
+.analytics-orb-lettering text {
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 15px;
+    letter-spacing: 0.35em;
+    fill: #ffffff;
+    text-shadow:
+        0 0 6px rgba(255,180,90,0.9),
+        0 0 14px rgba(255,140,0,0.75),
+        0 0 24px rgba(255,120,0,0.5);
+}
+.analytics-orb-lettering textPath {
+    text-transform: uppercase;
+}
+.analytics-orb-meta {
+    margin-top: 12px;
+    text-align: center;
+    font-family: 'Share Tech Mono','Orbitron',sans-serif;
+    font-size: 0.65rem;
+    color: #d6c7ff;
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 10px rgba(173,134,255,0.5);
+}
+.analytics-orb-meta span {
+    display: block;
+    margin-bottom: 2px;
+}
+@keyframes analyticsLinkPulse {
+    0%, 100% {
+        box-shadow: 0 0 25px rgba(187,146,255,0.35);
+        transform: scale(0.98);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(200,160,255,0.65);
+        transform: scale(1.02);
+    }
+}
+@media (max-width: 800px) {
+    #analytics-orb-stack {
+        position: static;
+        margin: 2rem auto 1rem;
+        width: 150px;
+    }
+    .add-miner-panel {
+        position: static;
+        margin: 0 auto 2rem;
+        width: min(320px, 90%);
+        opacity: 1;
+    }
 }
 .partners-section { margin-top: 3rem; text-align: center; position: relative; z-index: 5; padding-bottom: 2rem; }
 .partners-section .section-title {
@@ -342,9 +482,6 @@ body {
 </head>
 
 <body>
-    <div class="analytics-banner">
-        <a href="/analytics">📈 Historical Analytics</a>
-    </div>
     <!-- Full-screen steam layer -->
     <canvas id="steam-layer"></canvas>
     
@@ -459,7 +596,7 @@ body {
         </div>
     </div>
     <!-- Miner Portal Orb Container (floats below wattage fan, does not affect layout) -->
-    <div id="miner-portal-orb-container" style="position:absolute; left:calc(50% + 576px); transform:translateX(-50%); top:calc(220px + 1in); width:220px; height:180px; z-index:200; pointer-events:none;"></div>
+    <div id="miner-portal-orb-container" style="position:absolute; left:calc(50% + 576px); transform:translateX(-50%); top:calc(220px + 1in); width:220px; height:180px; z-index:200; pointer-events:auto;"></div>
 
     <div id="miners"></div>
     
@@ -525,11 +662,31 @@ body {
             </div>
         </div>
         <form id="powerCostForm" autocomplete="off" style="margin-top:12px; text-align:center;">
-            <label for="costPerKwh" style="color:#ff9100; font-family:'NixieOne','Share Tech Mono',monospace; font-size:1.1em;">Cost per kWh ($):</label>
+            <label for="costPerKwh" style="color:#ff9100; font-family:'Share Tech Mono','Share Tech Mono',monospace; font-size:1.1em;">Cost per kWh ($):</label>
             <input type="number" id="costPerKwh" name="costPerKwh" min="0" step="0.001" value="0.13" style="margin-left:8px; background:#111; color:#ff9100; border:2px solid #ff9100;">
         </form>
     </div>
     
+    <div id="analytics-orb-stack" aria-live="polite">
+        <div class="analytics-orb-console">
+            <canvas id="analytics-orb-canvas" width="140" height="140"></canvas>
+            <a href="/analytics" class="analytics-orb-link" aria-label="Open Historical Analytics"></a>
+            <svg class="analytics-orb-lettering" viewBox="0 0 200 200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <defs>
+                    <path id="analytics-text-arc" d="M 100 12 a 88 88 0 1 1 -0.1 0" fill="none"></path>
+                </defs>
+                <text>
+                    <textPath xlink:href="#analytics-text-arc" startOffset="50%" text-anchor="middle">HISTORICAL ANALYTICS</textPath>
+                </text>
+            </svg>
+        </div>
+        <div class="analytics-orb-meta">
+            <span id="analytics-orb-hash">Fleet Hash: -- TH/s</span>
+            <span id="analytics-orb-trend">Trend: --</span>
+            <span id="analytics-orb-samples">Samples: --</span>
+        </div>
+    </div>
+
     <div class="add-miner-panel">
         <h3>Add or Remove Miners</h3>
         <form id="addMinerForm" autocomplete="off">

@@ -139,15 +139,8 @@
 /* Nixie tube font from Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
-@font-face {
-  font-family: 'NixieOne';
-  src: url('https://fonts.gstatic.com/s/nixieone/v21/lW-8wjkKLXjg5y2o2uUYVXY.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
-
 .nixie-digit {
-  font-family: 'NixieOne', 'Share Tech Mono', monospace;
+  font-family: 'Share Tech Mono', monospace;
   color: #ff9100;
   background: #111;
   border-radius: 6px;
@@ -178,7 +171,7 @@
   border-radius: 6px;
   background: #181818;
   box-shadow: 0 0 12px #000a, 0 0 0 2px #222 inset;
-  font-family: 'NixieOne', 'Share Tech Mono', monospace;
+  font-family: 'Share Tech Mono', monospace;
   font-size: 1.08em;
   letter-spacing: 2px;
   min-height: 38px;
@@ -192,7 +185,7 @@
   margin-right: 18px;
   color: #ff9100;
   text-shadow: 0 0 8px #ff9100, 0 0 2px #fff;
-  font-family: 'NixieOne', 'Share Tech Mono', monospace;
+  font-family: 'Share Tech Mono', monospace;
   letter-spacing: 1.5px;
 }
 .add-miner-panel {
@@ -201,7 +194,7 @@
   box-shadow: 0 0 32px #00eaff88, 0 0 8px #222 inset, 0 0 2px #00eaff;
   padding: 24px 32px;
   color: #fff;
-  font-family: 'NixieOne', 'Share Tech Mono', monospace;
+  font-family: 'Share Tech Mono', monospace;
   text-shadow: 0 0 8px #00eaff, 0 0 2px #fff, 0 0 24px #00eaff;
   transition: background 0.3s, opacity 0.3s;
   opacity: 0.5;
@@ -232,7 +225,7 @@
   border-radius: 10px;
   padding: 10px 32px;
   font-size: 1.08em;
-  font-family: 'NixieOne', 'Share Tech Mono', monospace;
+  font-family: 'Share Tech Mono', monospace;
   cursor: pointer;
   box-shadow: 0 0 12px #00eaff88, 0 2px 8px #00eaff44;
   text-shadow: 0 0 8px #00eaff, 0 0 2px #fff;

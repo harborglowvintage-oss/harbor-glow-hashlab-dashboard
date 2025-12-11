@@ -159,8 +159,8 @@
             }
             link.textContent = miner.name === 'NerdAxe1'
                 ? 'Nq'
-                : miner.name === 'nerdoct1'
-                    ? 'No'
+                : miner.name === 'H-nerd'
+                    ? 'Hn'
                     : miner.name[0] || '?';
             link.style.position = 'absolute';
             link.style.left = (x-15) + 'px';

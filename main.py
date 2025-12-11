@@ -122,11 +122,13 @@ def is_valid_ipv4(value: str) -> bool:
 
 MINERS = {
     "A": "192.168.179.221",
-    "B": "192.168.179.179",
+    "B": "192.168.179.178",
     "C": "192.168.179.201",
     "D": "192.168.179.144",
     "E": "192.168.179.154",
-    "F": "192.168.179.145"
+    "F": "192.168.179.143",
+    "G": "192.168.179.185",
+    "H-nerd": "192.168.179.218",
 }
 
 CONFIG_FILE = Path("miners_config.json")
@@ -439,6 +441,7 @@ async def periodic_metric_logger():
 
 @app.on_event("startup")
 async def startup_event():
+    await prune_inactive_miners_on_startup()
     # Only start periodic logger in development, not in production/cloud environments
     if os.getenv("RENDER") or os.getenv("ENVIRONMENT") == "production":
         logger.info("Production environment detected - skipping periodic logger")
@@ -473,10 +476,47 @@ def save_miners():
     except Exception as e:
         print(f"Error saving config: {e}")
 
-async def gather_stats():
-    tasks = [fetch_miner_stats(name, ip) for name, ip in MINERS.items()]
+async def detect_active_miners(miner_map: Dict[str, str]) -> Dict[str, str]:
+    """Probe configured miners once and keep only those that respond."""
+    items = list(miner_map.items())
+    if not items:
+        return {}
+    tasks = [fetch_miner_stats(name, ip) for name, ip in items]
     results = await asyncio.gather(*tasks)
-    return {m["name"]: m for m in results}
+    active: Dict[str, str] = {}
+    for (name, _), payload in zip(items, results):
+        if payload.get("alive"):
+            active[name] = miner_map[name]
+    return active
+
+
+async def prune_inactive_miners_on_startup():
+    if not MINERS:
+        return
+    active = await detect_active_miners(MINERS)
+    inactive = sorted(set(MINERS.keys()) - set(active.keys()))
+    if not inactive:
+        return
+    logger.info(
+        "Startup filter: skipping %d inactive miner(s): %s",
+        len(inactive),
+        ", ".join(inactive)
+    )
+    MINERS.clear()
+    MINERS.update(active)
+
+
+async def gather_stats():
+    items = list(MINERS.items())
+    tasks = [fetch_miner_stats(name, ip) for name, ip in items]
+    results = await asyncio.gather(*tasks)
+    enriched = {}
+    for (name, ip), payload in zip(items, results):
+        miner_data = dict(payload)
+        miner_data["ip"] = ip
+        miner_data["dashboard_url"] = f"http://{ip}/"
+        enriched[name] = miner_data
+    return enriched
 
 def is_authenticated(request: Request):
     return request.session.get("user") == AUTH_CONFIG["admin_username"]

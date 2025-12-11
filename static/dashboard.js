@@ -104,6 +104,18 @@ async function updateMiners() {
                 : (typeof m.temp === 'number' && !isNaN(m.temp) ? m.temp : null);
             const chipTempF = (chipTempVal !== null) ? (chipTempVal * 9/5 + 32).toFixed(1) : 'N/A';
 
+            const rawStatus = (m.status || '').toString();
+            const statusText = rawStatus ? escapeHTML(rawStatus) : 'Status Unknown';
+            const normalizedStatus = rawStatus.toLowerCase();
+            let statusClass = 'status-ok';
+            if (normalizedStatus.includes('heat')) {
+                statusClass = 'status-hot';
+            } else if (normalizedStatus.includes('reject')) {
+                statusClass = 'status-reject';
+            } else if (normalizedStatus.includes('offline')) {
+                statusClass = 'status-offline';
+            }
+
             // Only show multiple ASIC temps for miners that actually expose per-ASIC data
             let asicList = "";
             if (m.type !== 'NERDQ' && m.asicTemps && m.asicTemps.length > 0) {
@@ -135,6 +147,7 @@ async function updateMiners() {
                     </div>
 
                     <h2>${escapeHTML(name)} (${escapeHTML(m.type)})</h2>
+                    <div class="miner-status ${statusClass}">${statusText}</div>
 
                     <div class="miner-data">
                         <div>Temp: ${typeof m.temp === 'number' ? escapeHTML(m.temp) + '°C / ' + escapeHTML(tempF) + '°F' : 'N/A'}</div>
