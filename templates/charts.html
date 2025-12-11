@@ -343,7 +343,7 @@
         }
     })();
 
-    // ☁️ Live Weather Tracker
+    // ☁️ Live Weather Tracker (NOAA - No API key required!)
     (async function initWeather() {
         const container = document.getElementById('weather-data');
         const icon = container.querySelector('.weather-icon');
@@ -354,58 +354,83 @@
         const alert = container.querySelector('.weather-alert');
         const location = container.querySelector('.weather-location');
         
-        // TODO: Replace with your OpenWeatherMap API key from https://openweathermap.org/api
-        const OPENWEATHER_API_KEY = 'DEMO_KEY'; // Get free key at openweathermap.org
-        
         try {
-            // Get user's location via IP
+            // 1. Get user's location via IP
             const ipRes = await fetch('https://ipapi.co/json/');
             const ipData = await ipRes.json();
             const { latitude, longitude, city, region } = ipData;
             
-            // Fetch weather data
-            const weatherRes = await fetch(
-                `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}&units=imperial`
-            );
-            const weather = await weatherRes.json();
+            // 2. Query NOAA for weather grid info
+            const gridRes = await fetch(`https://api.weather.gov/points/${latitude},${longitude}`);
+            const gridData = await gridRes.json();
+            const stationURL = gridData.properties.observationStations;
             
+            // 3. Get nearest observation station
+            const stationsRes = await fetch(stationURL);
+            const stations = await stationsRes.json();
+            const stationId = stations.observationStations[0].split('/').pop();
+            
+            // 4. Get latest observation from station
+            const obsRes = await fetch(`https://api.weather.gov/stations/${stationId}/observations/latest`);
+            const obs = await obsRes.json();
+            const props = obs.properties;
+            
+            // 5. Format weather data
+            const tempC = props.temperature.value;
+            const tempF = tempC != null ? Math.round(tempC * 9/5 + 32) : null;
+            const humidityVal = props.relativeHumidity.value;
+            const windKPH = props.windSpeed.value;
+            const windMPH = windKPH != null ? Math.round(windKPH * 0.621371) : null;
+            const description = props.textDescription || 'Unknown';
+            
+            // Weather icon mapping
             const weatherIcons = {
-                'Clear': '☀️',
-                'Clouds': '☁️',
-                'Rain': '🌧️',
-                'Snow': '❄️',
-                'Thunderstorm': '⛈️',
-                'Drizzle': '🌦️',
-                'Mist': '🌫️',
-                'Fog': '🌫️'
+                'clear': '☀️',
+                'sunny': '☀️',
+                'cloudy': '☁️',
+                'clouds': '☁️',
+                'overcast': '☁️',
+                'rain': '🌧️',
+                'drizzle': '🌦️',
+                'snow': '❄️',
+                'sleet': '🌨️',
+                'thunderstorm': '⛈️',
+                'fog': '🌫️',
+                'mist': '🌫️',
+                'partly': '⛅'
             };
             
-            const tempF = Math.round(weather.main.temp);
-            const weatherMain = weather.weather[0]?.main || 'Clear';
+            // Find matching icon
+            let weatherIcon = '🌤️';
+            const descLower = description.toLowerCase();
+            for (const [keyword, emoji] of Object.entries(weatherIcons)) {
+                if (descLower.includes(keyword)) {
+                    weatherIcon = emoji;
+                    break;
+                }
+            }
             
-            icon.textContent = weatherIcons[weatherMain] || '🌤️';
-            temp.textContent = `${tempF}°F`;
-            condition.textContent = weather.weather[0]?.description || '--';
-            humidity.textContent = `${weather.main.humidity}%`;
-            wind.textContent = `${Math.round(weather.wind.speed)} mph`;
+            // Update UI
+            icon.textContent = weatherIcon;
+            temp.textContent = tempF ? `${tempF}°F` : '--°F';
+            condition.textContent = description;
+            humidity.textContent = humidityVal ? `${Math.round(humidityVal)}%` : '--%';
+            wind.textContent = windMPH ? `${windMPH} mph` : '-- mph';
             location.textContent = `${city}, ${region}`;
             
             // Show heat warning if temp > 85°F (can affect miner cooling)
-            if (tempF > 85) {
+            if (tempF && tempF > 85) {
                 alert.style.display = 'block';
                 alert.textContent = `⚠️ High ambient temp (${tempF}°F) - monitor miner cooling`;
             }
             
         } catch (err) {
             console.error('Weather error:', err);
-            if (OPENWEATHER_API_KEY === 'DEMO_KEY') {
-                temp.textContent = '--°';
-                condition.textContent = 'API key required';
-                location.textContent = 'Get free key at openweathermap.org';
-            } else {
-                temp.textContent = '--°';
-                condition.textContent = 'Error loading weather';
-            }
+            temp.textContent = '--°';
+            condition.textContent = 'Error loading weather';
+            location.textContent = 'NOAA service unavailable';
+            humidity.textContent = '--%';
+            wind.textContent = '-- mph';
         }
     })();
     </script>
