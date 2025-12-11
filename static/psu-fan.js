@@ -158,7 +158,7 @@ function initPSUFan() {
 
             // Update rotation based on load
             currentSpeed += (targetSpeed - currentSpeed) * 0.1;
-            rotation += currentSpeed * 0.05;
+            rotation += currentSpeed * 0.15;
 
             requestAnimationFrame(drawFan);
         }
