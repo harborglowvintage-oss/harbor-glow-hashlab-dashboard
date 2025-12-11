@@ -4,11 +4,19 @@
     let minerList = [];
     const linkPalette = ['#00eaff', '#ff8c00', '#9d7bff', '#59ffa1', '#ff5ea8'];
     const linkMeta = new Map();
+    const linkElements = new Map();
     function syncMinerList(list) {
         minerList = Array.isArray(list) ? list.filter(Boolean) : [];
         const incoming = new Set(minerList.map(m => m.name));
         Array.from(linkMeta.keys()).forEach(name => {
-            if (!incoming.has(name)) linkMeta.delete(name);
+            if (!incoming.has(name)) {
+                linkMeta.delete(name);
+                const el = linkElements.get(name);
+                if (el) {
+                    el.remove();
+                    linkElements.delete(name);
+                }
+            }
         });
         minerList.forEach((miner, idx) => {
             if (!linkMeta.has(miner.name)) {
@@ -24,6 +32,7 @@
     // Orb placement: inside container div
     const orbSize = 140;
     const container = document.getElementById('miner-portal-orb-container');
+    if (!container) return;
     // Remove previous SVG logo if present
     const oldLogo = document.getElementById('swarmgate-logo-svg');
     if (oldLogo) oldLogo.remove();
@@ -129,15 +138,70 @@
         }
     }
     // Render orbiting hyperlink letters
+    function resolveMinerHref(miner) {
+        if (!miner.ip) return '';
+        // Use backend redirect to mitigate mixed-content blocking (HTTPS -> HTTP)
+        return `/miner-redirect?ip=${encodeURIComponent(miner.ip)}`;
+    }
+
+    function ensureLinkElement(miner, meta) {
+        let link = linkElements.get(miner.name);
+        if (!link) {
+            link = document.createElement('a');
+            link.className = 'miner-portal-link';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.style.position = 'absolute';
+            link.style.width = '30px';
+            link.style.height = '30px';
+            link.style.display = 'flex';
+            link.style.alignItems = 'center';
+            link.style.justifyContent = 'center';
+            link.style.fontFamily = 'Share Tech Mono, monospace';
+            link.style.fontWeight = 'bold';
+            link.style.fontSize = '1.3em';
+            link.style.borderRadius = '50%';
+            link.style.zIndex = '201';
+            link.style.transition = 'background 0.2s, color 0.2s';
+            link.style.textDecoration = 'none';
+            linkElements.set(miner.name, link);
+            container.appendChild(link);
+        }
+
+        const label = miner.name === 'NerdAxe1'
+            ? 'Nq'
+            : miner.name === 'H-nerd'
+                ? 'Hn'
+                : miner.name[0] || '?';
+        link.textContent = label;
+        link.href = resolveMinerHref(miner);
+        const color = meta.color;
+        link.style.color = '#00eaff';
+        link.style.background = 'rgba(0,234,255,0.18)';
+        link.style.boxShadow = `0 0 12px ${color}, 0 0 4px #fff`;
+        link.style.textShadow = `0 0 8px ${color}, 0 0 2px #fff`;
+        link.style.pointerEvents = miner.ip ? 'auto' : 'none';
+        link.onmouseover = () => {
+            link.style.background = '#fff';
+            link.style.color = '#8000ff';
+        };
+        link.onmouseout = () => {
+            link.style.background = 'rgba(128,0,255,0.33)';
+            link.style.color = color;
+        };
+        return link;
+    }
+
     function renderLinks() {
-        // Remove previous link elements
-        // Remove previous link elements from container only
-        container.querySelectorAll('.miner-portal-link').forEach(e => e.remove());
         const centerX = 40 + orbSize/2;
         const centerY = 20 + orbSize/2;
         // Evenly space links around the circle with subtle synchronized motion
         const totalLinks = minerList.length;
-        if (!totalLinks) return;
+        if (!totalLinks) {
+            linkElements.forEach((el) => el.remove());
+            linkElements.clear();
+            return;
+        }
         for (let i=0; i<totalLinks; i++) {
             const miner = minerList[i];
             const meta = linkMeta.get(miner.name) || { color: linkPalette[0] };
@@ -147,50 +211,9 @@
             const angle = baseAngle + wobble;
             const x = centerX + Math.cos(angle) * radius;
             const y = centerY + Math.sin(angle) * radius;
-            let link = document.createElement('a');
-            link.className = 'miner-portal-link';
-            if (miner.ip) {
-                link.href = `http://${miner.ip}/`;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-            } else {
-                link.href = '#';
-                link.style.pointerEvents = 'none';
-            }
-            link.textContent = miner.name === 'NerdAxe1'
-                ? 'Nq'
-                : miner.name === 'H-nerd'
-                    ? 'Hn'
-                    : miner.name[0] || '?';
-            link.style.position = 'absolute';
+            const link = ensureLinkElement(miner, meta);
             link.style.left = (x-15) + 'px';
             link.style.top = (y-15) + 'px';
-            link.style.width = '30px';
-            link.style.height = '30px';
-            link.style.display = 'flex';
-            link.style.alignItems = 'center';
-            link.style.justifyContent = 'center';
-            link.style.fontFamily = 'Share Tech Mono, monospace';
-            link.style.fontWeight = 'bold';
-            link.style.fontSize = '1.3em';
-            link.style.color = '#00eaff';
-            link.style.background = 'rgba(0,234,255,0.18)';
-            link.style.borderRadius = '50%';
-            link.style.boxShadow = `0 0 12px ${meta.color}, 0 0 4px #fff`;
-            link.style.textShadow = `0 0 8px ${meta.color}, 0 0 2px #fff`;
-            link.style.zIndex = '201';
-            link.style.pointerEvents = miner.ip ? 'auto' : 'none';
-            link.style.transition = 'background 0.2s, color 0.2s';
-            link.style.textDecoration = 'none';
-            link.onmouseover = () => {
-                link.style.background = '#fff';
-                link.style.color = '#8000ff';
-            };
-            link.onmouseout = () => {
-                link.style.background = 'rgba(128,0,255,0.33)';
-                link.style.color = meta.color;
-            };
-            container.appendChild(link);
         }
     }
     function animate() {

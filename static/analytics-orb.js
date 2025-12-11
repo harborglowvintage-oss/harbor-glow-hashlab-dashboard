@@ -92,6 +92,60 @@
         animate();
     }
 
+    function drawArcText(ctx, text, centerX, centerY, radius, startAngle, clockwise = true) {
+        ctx.save();
+        ctx.font = '16px "Orbitron", "Share Tech Mono", sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(255,255,255,0.65)';
+        ctx.shadowBlur = 4;
+
+        const direction = clockwise ? 1 : -1;
+        const anglePerChar = Math.PI / (text.length + 1);
+        const midpoint = (text.length - 1) / 2;
+
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            const angle = startAngle + direction * (i - midpoint) * anglePerChar;
+            ctx.save();
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            ctx.translate(x, y);
+            ctx.rotate(angle + (clockwise ? Math.PI / 2 : -Math.PI / 2));
+            ctx.fillText(char, 0, 0);
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
+    function renderAnalyticsOrbLabel() {
+        const canvas = document.getElementById('analytics-orb-text-canvas');
+        if (!canvas) {
+            return;
+        }
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            return;
+        }
+
+        const dpr = window.devicePixelRatio || 1;
+        const displayWidth = canvas.clientWidth || canvas.width;
+        const displayHeight = canvas.clientHeight || canvas.height;
+        const scaledWidth = Math.round(displayWidth * dpr);
+        const scaledHeight = Math.round(displayHeight * dpr);
+
+        if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
+            canvas.width = scaledWidth;
+            canvas.height = scaledHeight;
+        }
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+        const radius = Math.min(displayWidth, displayHeight) / 2 - 26;
+        drawArcText('HISTORICAL ANALYTICS', ctx, displayWidth / 2, displayHeight / 2, radius, Math.PI / 2, true);
+    }
+
     async function hydrateMeta() {
         const hashEl = document.getElementById('analytics-orb-hash');
         const trendEl = document.getElementById('analytics-orb-trend');
@@ -117,7 +171,14 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         startOrb();
+        renderAnalyticsOrbLabel();
         hydrateMeta();
         setInterval(hydrateMeta, 60000);
     });
+
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(renderAnalyticsOrbLabel);
+    }
+
+    window.addEventListener('resize', renderAnalyticsOrbLabel);
 })();
