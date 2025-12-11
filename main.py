@@ -819,71 +819,247 @@ async def analytics_claude_insights(request: Request):
         logger.info("CLAUDE_API_KEY not found. Generating insights from fleet analysis.")
         # Generate insights from fleet overview analysis
         stats = await gather_stats()
+        miners = list(stats.values())
+        online = [m for m in miners if m.get("alive")]
         history_rows = await asyncio.to_thread(load_recent_metrics, AI_HISTORY_LIMIT)
         history_summary = summarize_history(history_rows)
-        analysis = analyze_fleet_overview(stats, history_summary)
         
-        # Parse observations into insight cards
+        # Generate 6 direct insights
         insights = []
-        summary_text = analysis.get("summary", "")
-        for line in summary_text.split("\n"):
-            line = line.strip()
-            if not line or line.startswith("🎯") or line.startswith("⚡") or line.startswith("📊"):
-                continue
-            
-            # Parse observation lines (format: "ICON TITLE: description")
-            if ":" in line and any(emoji in line for emoji in ["✅", "⚠️", "🔴", "📈", "📉", "🌡️", "ℹ️"]):
-                parts = line.split(":", 1)
-                if len(parts) == 2:
-                    title_part = parts[0].strip()
-                    description = parts[1].strip()
-                    
-                    # Extract icon and title
-                    icon = "ℹ️"
-                    if "✅" in title_part:
-                        icon = "✅"
-                        insight_type = "success"
-                    elif "⚠️" in title_part:
-                        icon = "⚠️"
-                        insight_type = "warning"
-                    elif "🔴" in title_part:
-                        icon = "🔴"
-                        insight_type = "critical"
-                    elif "📈" in title_part or "📊" in title_part:
-                        icon = "📈"
-                        insight_type = "info"
-                    elif "📉" in title_part:
-                        icon = "📉"
-                        insight_type = "warning"
-                    elif "🌡️" in title_part:
-                        icon = "🌡️"
-                        insight_type = "info"
-                    elif "ℹ️" in title_part:
-                        icon = "ℹ️"
-                        insight_type = "info"
-                    else:
-                        insight_type = "info"
-                    
-                    # Clean title (remove emoji)
-                    title = title_part.replace("✅", "").replace("⚠️", "").replace("🔴", "").replace("📈", "").replace("📉", "").replace("🌡️", "").replace("ℹ️", "").strip()
-                    
-                    # Find matching recommendation
-                    recommendation = ""
-                    recs = analysis.get("recommendations", [])
-                    for rec in recs:
-                        if any(keyword in rec.lower() for keyword in title.lower().split()[:2]):
-                            recommendation = rec.replace("→", "").strip()
-                            break
-                    
-                    insights.append({
-                        "type": insight_type,
-                        "icon": icon,
-                        "title": title,
-                        "description": description,
-                        "recommendation": recommendation
-                    })
         
-        return JSONResponse({"success": True, "source": "sample", "insights": insights})
+        # 1. Fleet Availability
+        availability_pct = (len(online) / len(miners) * 100) if miners else 0
+        if availability_pct == 100:
+            insights.append({
+                "type": "success",
+                "icon": "✅",
+                "title": "Fleet Availability",
+                "description": f"Perfect uptime - all {len(miners)} miners online and operational",
+                "recommendation": "Maintain current monitoring schedule and power infrastructure"
+            })
+        elif availability_pct >= 80:
+            insights.append({
+                "type": "success",
+                "icon": "✅",
+                "title": "Fleet Availability",
+                "description": f"Strong uptime at {availability_pct:.1f}% ({len(online)}/{len(miners)} online)",
+                "recommendation": "Check offline miners and verify network connectivity"
+            })
+        else:
+            insights.append({
+                "type": "critical",
+                "icon": "🔴",
+                "title": "Fleet Availability",
+                "description": f"Critical - only {availability_pct:.1f}% online ({len(online)}/{len(miners)} miners)",
+                "recommendation": "Immediate action required: check power, network, and restart offline miners"
+            })
+        
+        # 2. Hashrate Trend
+        total_hash = sum(m.get("hashrate_1m", 0) for m in online)
+        if history_summary and history_summary.get("total_hash_series") and len(history_summary["total_hash_series"]) >= 3:
+            series = history_summary["total_hash_series"]
+            peak = max(series)
+            current = series[-1]
+            trend = history_summary.get("fleet_hash_trend", "stable")
+            performance_vs_peak = (current / peak * 100) if peak > 0 else 0
+            
+            if performance_vs_peak >= 95:
+                insights.append({
+                    "type": "success",
+                    "icon": "📈",
+                    "title": "Hashrate Trend",
+                    "description": f"Excellent - {trend.upper()} at {current:.2f} TH/s ({performance_vs_peak:.1f}% of peak)",
+                    "recommendation": "Keep current profiles; re-run analysis if hashrate dips below 95% of target"
+                })
+            elif performance_vs_peak >= 85:
+                insights.append({
+                    "type": "info",
+                    "icon": "📊",
+                    "title": "Hashrate Trend",
+                    "description": f"Good - {trend.upper()} at {current:.2f} TH/s ({performance_vs_peak:.1f}% of peak)",
+                    "recommendation": "Monitor for further decline; consider re-tuning if performance drops"
+                })
+            else:
+                insights.append({
+                    "type": "warning",
+                    "icon": "📉",
+                    "title": "Hashrate Trend",
+                    "description": f"Below optimal - {trend.upper()} at {current:.2f} TH/s ({performance_vs_peak:.1f}% of peak)",
+                    "recommendation": "Investigate underperforming miners and check for throttling or cooling issues"
+                })
+        else:
+            insights.append({
+                "type": "info",
+                "icon": "📊",
+                "title": "Hashrate Trend",
+                "description": f"Current output at {total_hash:.2f} TH/s - collecting baseline data",
+                "recommendation": "Allow system to collect more samples for trend analysis"
+            })
+        
+        # 3. Temperature Status
+        temps = [m.get("temp", 0) for m in online if m.get("temp")]
+        avg_temp = sum(temps) / len(temps) if temps else None
+        if avg_temp:
+            temp_margin = TEMP_ALERT_THRESHOLD - avg_temp
+            if temp_margin > 10:
+                insights.append({
+                    "type": "success",
+                    "icon": "🌡️",
+                    "title": "Temperature Status",
+                    "description": f"Excellent thermal margin at {avg_temp:.1f}°C ({temp_margin:.1f}°C below threshold)",
+                    "recommendation": "Current cooling strategy is effective - maintain airflow and ambient conditions"
+                })
+            elif temp_margin > 5:
+                insights.append({
+                    "type": "info",
+                    "icon": "🌡️",
+                    "title": "Temperature Status",
+                    "description": f"Good cooling at {avg_temp:.1f}°C ({temp_margin:.1f}°C below threshold)",
+                    "recommendation": "Monitor temps during peak heat hours; prepare additional cooling if needed"
+                })
+            elif temp_margin > 0:
+                insights.append({
+                    "type": "warning",
+                    "icon": "⚠️",
+                    "title": "Temps Creeping Up",
+                    "description": f"Approaching limit at {avg_temp:.1f}°C (only {temp_margin:.1f}°C margin)",
+                    "recommendation": "Improve ventilation, check fans, and reduce ambient temperature immediately"
+                })
+            else:
+                insights.append({
+                    "type": "critical",
+                    "icon": "🔴",
+                    "title": "Critical Temperature",
+                    "description": f"Critical - {avg_temp:.1f}°C exceeds threshold by {abs(temp_margin):.1f}°C",
+                    "recommendation": "Emergency cooling required - reduce frequency or power down hot miners"
+                })
+        else:
+            insights.append({
+                "type": "info",
+                "icon": "🌡️",
+                "title": "Temperature Status",
+                "description": "No temperature data available from miners",
+                "recommendation": "Verify temperature sensors are functioning properly"
+            })
+        
+        # 4. Power Efficiency
+        total_power = sum(m.get("power", 0) for m in online)
+        fleet_efficiency = (total_power / total_hash) if total_hash > 0 else 0
+        if fleet_efficiency > 0:
+            if fleet_efficiency < EFFICIENCY_ALERT_THRESHOLD * 0.8:
+                insights.append({
+                    "type": "success",
+                    "icon": "⚡",
+                    "title": "Power Efficiency",
+                    "description": f"Excellent - fleet average {fleet_efficiency:.1f} W/TH, {total_power:.0f}W total draw",
+                    "recommendation": "Efficiency is optimal for current hardware mix - maintain settings"
+                })
+            elif fleet_efficiency < EFFICIENCY_ALERT_THRESHOLD:
+                insights.append({
+                    "type": "info",
+                    "icon": "ℹ️",
+                    "title": "Power Efficiency",
+                    "description": f"Good - fleet average {fleet_efficiency:.1f} W/TH, {total_power:.0f}W total draw",
+                    "recommendation": "Acceptable efficiency - consider tuning if power costs are critical"
+                })
+            else:
+                insights.append({
+                    "type": "warning",
+                    "icon": "⚠️",
+                    "title": "Power Efficiency",
+                    "description": f"Below target - fleet average {fleet_efficiency:.1f} W/TH, {total_power:.0f}W total",
+                    "recommendation": "Consider staging rigs into low-power mode or upgrading to more efficient hardware"
+                })
+        else:
+            insights.append({
+                "type": "info",
+                "icon": "ℹ️",
+                "title": "Power Efficiency",
+                "description": f"Drawing {total_power:.0f}W total - efficiency calculation pending",
+                "recommendation": "Wait for hashrate stabilization to calculate accurate efficiency metrics"
+            })
+        
+        # 5. Share Quality
+        total_accepted = sum(m.get("sharesAccepted", 0) for m in online)
+        total_rejected = sum(m.get("sharesRejected", 0) for m in online)
+        total_shares = total_accepted + total_rejected
+        reject_rate = (total_rejected / total_shares * 100) if total_shares > 0 else 0
+        
+        if reject_rate < 1:
+            insights.append({
+                "type": "success",
+                "icon": "✅",
+                "title": "Hashrate Stable",
+                "description": f"Excellent share quality - {reject_rate:.2f}% rejection rate ({total_accepted:,} accepted)",
+                "recommendation": "Pool connectivity is excellent - maintain current network configuration"
+            })
+        elif reject_rate < 2:
+            insights.append({
+                "type": "success",
+                "icon": "✅",
+                "title": "Hashrate Stable",
+                "description": f"Good share quality - {reject_rate:.2f}% rejection rate ({total_accepted:,} accepted)",
+                "recommendation": "Rejection rate is within normal range - continue monitoring"
+            })
+        elif reject_rate < 5:
+            insights.append({
+                "type": "warning",
+                "icon": "⚠️",
+                "title": "Elevated Rejections",
+                "description": f"Elevated rejections at {reject_rate:.2f}% ({total_rejected:,}/{total_shares:,} shares)",
+                "recommendation": "Check network latency to pool; consider switching to closer server"
+            })
+        else:
+            insights.append({
+                "type": "critical",
+                "icon": "🔴",
+                "title": "High Rejection Rate",
+                "description": f"Critical rejection rate at {reject_rate:.2f}% - pool connection issues detected",
+                "recommendation": "Immediate action: check network, switch pools, or verify miner configurations"
+            })
+        
+        # 6. Stability & Volatility
+        if history_summary and history_summary.get("total_hash_series") and len(history_summary["total_hash_series"]) >= 5:
+            series = history_summary["total_hash_series"]
+            recent = series[-5:]
+            volatility = max(recent) - min(recent)
+            avg_recent = sum(recent) / len(recent)
+            volatility_pct = (volatility / avg_recent * 100) if avg_recent > 0 else 0
+            
+            if volatility_pct < 5:
+                insights.append({
+                    "type": "success",
+                    "icon": "✅",
+                    "title": "Stability",
+                    "description": f"Highly stable - {volatility_pct:.1f}% variance over last {len(recent)} samples",
+                    "recommendation": "Fleet is running consistently - no tuning required"
+                })
+            elif volatility_pct < 10:
+                insights.append({
+                    "type": "info",
+                    "icon": "📊",
+                    "title": "Stability",
+                    "description": f"Moderate fluctuation - {volatility_pct:.1f}% variance ({volatility:.2f} TH/s range)",
+                    "recommendation": "Monitor for patterns; investigate if variance increases further"
+                })
+            else:
+                insights.append({
+                    "type": "warning",
+                    "icon": "⚠️",
+                    "title": "High Volatility",
+                    "description": f"High volatility detected - {volatility_pct:.1f}% variance ({volatility:.2f} TH/s range)",
+                    "recommendation": "Investigate unstable miners causing hashrate swings; check for thermal throttling"
+                })
+        else:
+            insights.append({
+                "type": "info",
+                "icon": "📊",
+                "title": "Stability Analysis",
+                "description": f"Collecting stability metrics - {history_summary.get('samples', 0)} samples so far",
+                "recommendation": "Allow more time for historical data collection to establish stability baseline"
+            })
+        
+        return JSONResponse({"success": True, "source": "fleet-analysis", "insights": insights})
 
     body = {
         "model": claude_model,

@@ -23,6 +23,8 @@ Set these environment variables in your Render service:
 - `LAN_ONLY_MODE=false` - Disable LAN restrictions for cloud deployment
 - `DATA_LOG_INTERVAL=60` - Metrics logging interval (seconds)
 - `AI_HISTORY_LIMIT=288` - Historical data limit for AI analysis
+- `CLAUDE_API_KEY=` - Enables the Claude AI Performance Insights widget (`/analytics/claude`)
+- `CLAUDE_MODEL=claude-3-5-sonnet-20241022` (optional override)
 
 ### Default Credentials
 
@@ -37,6 +39,8 @@ Set these environment variables in your Render service:
 pip install -r requirements.txt
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+> Note: keep your virtualenv synced with `pip install -r requirements.txt --upgrade`. The server stack is pinned to uvicorn 0.30.x because 0.38.x currently fails to bind to any interface inside constrained environments.
 
 ## Features
 
