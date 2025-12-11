@@ -1059,6 +1059,55 @@ async def analytics_claude_insights(request: Request):
                 "recommendation": "Allow more time for historical data collection to establish stability baseline"
             })
         
+        # 7. Fan Speed & Cooling System
+        fan_speeds = [m.get("fanSpeed", 0) for m in online if m.get("fanSpeed")]
+        if fan_speeds:
+            avg_fan = sum(fan_speeds) / len(fan_speeds)
+            min_fan = min(fan_speeds)
+            max_fan = max(fan_speeds)
+            
+            # Fan speed health assessment (typical range: 3000-6000 RPM for mining ASICs)
+            if avg_fan >= 4000:
+                insights.append({
+                    "type": "success",
+                    "icon": "💨",
+                    "title": "Cooling System",
+                    "description": f"Strong airflow - average {avg_fan:.0f} RPM (range: {min_fan:.0f}-{max_fan:.0f} RPM)",
+                    "recommendation": "Fan speeds are healthy; cooling system operating normally"
+                })
+            elif avg_fan >= 2500:
+                insights.append({
+                    "type": "info",
+                    "icon": "💨",
+                    "title": "Cooling System",
+                    "description": f"Moderate airflow - average {avg_fan:.0f} RPM (range: {min_fan:.0f}-{max_fan:.0f} RPM)",
+                    "recommendation": "Fan speeds adequate; monitor during high ambient temperatures"
+                })
+            elif avg_fan >= 1500:
+                insights.append({
+                    "type": "warning",
+                    "icon": "⚠️",
+                    "title": "Low Fan Speed",
+                    "description": f"Reduced airflow - average {avg_fan:.0f} RPM (range: {min_fan:.0f}-{max_fan:.0f} RPM)",
+                    "recommendation": "Check for fan failures or auto-tuning reducing speeds too much"
+                })
+            else:
+                insights.append({
+                    "type": "critical",
+                    "icon": "🔴",
+                    "title": "Critical Fan Speed",
+                    "description": f"Insufficient airflow - average {avg_fan:.0f} RPM (range: {min_fan:.0f}-{max_fan:.0f} RPM)",
+                    "recommendation": "Immediate action: verify fans are operational, replace failed units"
+                })
+        else:
+            insights.append({
+                "type": "info",
+                "icon": "💨",
+                "title": "Cooling System",
+                "description": "No fan speed data available from miners",
+                "recommendation": "Verify fan speed reporting is enabled on miner firmware"
+            })
+        
         return JSONResponse({"success": True, "source": "fleet-analysis", "insights": insights})
 
     body = {
