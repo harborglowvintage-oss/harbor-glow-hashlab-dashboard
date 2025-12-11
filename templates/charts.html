@@ -99,6 +99,29 @@
             width: 100% !important;
             max-height: 260px;
         }
+        #swarm-event-chart {
+            max-height: none;
+            height: 260px;
+        }
+        .swarm-event-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: #9bdcff;
+            margin-top: 10px;
+        }
+        .swarm-event-legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .swarm-event-legend .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px currentColor;
+        }
         #miner-spotlight {
             line-height: 1.4;
         }
@@ -257,7 +280,7 @@
             </div>
         </section>
     </main>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="/static/historical-charts.js?v=2" defer></script>
     
     <!-- Live Data Widgets Scripts -->

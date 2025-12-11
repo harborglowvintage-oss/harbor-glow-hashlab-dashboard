@@ -74,6 +74,7 @@ from pathlib import Path
 import secrets
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
+from tuning import auto_tune_miners, stats_to_tuning_payload
 AUTH_CONFIG_FILE = Path("auth_config.json")
 if AUTH_CONFIG_FILE.exists():
     with open(AUTH_CONFIG_FILE, 'r') as f:
@@ -712,6 +713,44 @@ async def historical_metrics(
         "summary": summary
     })
 
+
+@app.get("/tuning/recommendations")
+async def tuning_recommendations(request: Request):
+    if not is_authenticated(request):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    stats = await gather_stats()
+    payload = stats_to_tuning_payload(stats)
+    recommendations = auto_tune_miners(payload)
+    return JSONResponse({
+        "success": True,
+        "source": "live",
+        "count": len(recommendations),
+        "data": recommendations
+    })
+
+
+@app.post("/tuning/recommendations")
+async def tuning_recommendations_from_payload(request: Request):
+    if not is_authenticated(request):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    try:
+        payload = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON payload"}, status_code=400)
+    if isinstance(payload, dict):
+        miners = payload.get("miners")
+    else:
+        miners = payload
+    if not isinstance(miners, list):
+        return JSONResponse({"error": "Expected a list of miner objects or {'miners': [...]}."}, status_code=400)
+    recommendations = auto_tune_miners(miners)
+    return JSONResponse({
+        "success": True,
+        "source": "payload",
+        "count": len(recommendations),
+        "data": recommendations
+    })
+
 @app.post("/ai-assist")
 async def ai_assist(request: Request):
     if not is_authenticated(request):
@@ -817,6 +856,19 @@ async def delete_miner(request: Request):
         return JSONResponse({"success": True, "message": f"Miner '{name}' deleted"})
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+@app.get("/miner-redirect")
+async def miner_redirect(ip: str):
+    """
+    Redirects to the miner's IP address.
+    Helps with some mixed-content scenarios by initiating the navigation from the server side,
+    though the browser may still flag the final destination as insecure.
+    """
+    target = ip
+    if not target.startswith("http"):
+        target = f"http://{target}/"
+    return RedirectResponse(url=target)
 
 
 # ASGI application for Render deployment

@@ -46,3 +46,18 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8000
 - AI-assisted troubleshooting
 - Partner recommendations
 - Responsive cyberpunk UI
+
+### Auto-tuning Recommendations
+
+The dashboard now exposes GPT-friendly tuning help at `/tuning/recommendations`.
+
+- `GET /tuning/recommendations` pulls live miner stats and returns suggestions based on temperature and efficiency.
+- `POST /tuning/recommendations` accepts a JSON list (or `{"miners": [...]}`) that follows:
+
+```json
+[
+  {"miner_id":"A","model":"S19j Pro","hashrate_ths":100,"temp_c":70,"efficiency_w_th":30}
+]
+```
+
+Both routes respond with the same schema as the example above, making it easy to hand off results to GPT/Claude agents or UI widgets.
