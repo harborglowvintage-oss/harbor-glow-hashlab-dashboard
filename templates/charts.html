@@ -65,6 +65,35 @@
             position: relative;
             z-index: 50;
         }
+        .analytics-subnav {
+            background: rgba(5,10,18,0.8);
+            border-bottom: 1px solid rgba(0,255,243,0.08);
+            padding: 12px 32px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+        .analytics-subnav span {
+            color: #5cd4ff;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .analytics-subnav a {
+            color: #00ffcf;
+            text-decoration: none;
+            border: 1px solid rgba(0,255,243,0.3);
+            border-radius: 999px;
+            padding: 6px 16px;
+            font-size: 0.78rem;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .analytics-subnav a:hover {
+            background: rgba(0,255,243,0.15);
+            color: #02141f;
+        }
         .analytics-shell {
             max-width: 1280px;
             margin: 0 auto;
@@ -163,6 +192,10 @@
         <h1>Harbor Glow HashLab · Analytics</h1>
         <a href="/">← Back to Dashboard</a>
     </header>
+    <div class="analytics-subnav">
+        <span>Analytics Modules</span>
+        <a href="/analytics/claude">Claude AI Performance Insights Widget</a>
+    </div>
     <main class="analytics-shell">
         <section id="history-meta">Loading telemetry summary…</section>
         
@@ -423,23 +456,28 @@
         const location = container.querySelector('.weather-location');
         
         try {
+            const NOAA_HEADERS = {
+                headers: {
+                    'User-Agent': 'Harbor Glow HashLab Dashboard (harborglowvintage@gmail.com)'
+                }
+            };
             // 1. Get user's location via IP
             const ipRes = await fetch('https://ipapi.co/json/');
             const ipData = await ipRes.json();
             const { latitude, longitude, city, region } = ipData;
             
             // 2. Query NOAA for weather grid info
-            const gridRes = await fetch(`https://api.weather.gov/points/${latitude},${longitude}`);
+            const gridRes = await fetch(`https://api.weather.gov/points/${latitude},${longitude}`, NOAA_HEADERS);
             const gridData = await gridRes.json();
             const stationURL = gridData.properties.observationStations;
             
             // 3. Get nearest observation station
-            const stationsRes = await fetch(stationURL);
+            const stationsRes = await fetch(stationURL, NOAA_HEADERS);
             const stations = await stationsRes.json();
             const stationId = stations.observationStations[0].split('/').pop();
             
             // 4. Get latest observation from station
-            const obsRes = await fetch(`https://api.weather.gov/stations/${stationId}/observations/latest`);
+            const obsRes = await fetch(`https://api.weather.gov/stations/${stationId}/observations/latest`, NOAA_HEADERS);
             const obs = await obsRes.json();
             const props = obs.properties;
             

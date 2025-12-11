@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude AI Performance Insights Widget</title>
+    <link rel="icon" type="image/png" href="/static/img/bolt.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: radial-gradient(circle at top, #12192c 0%, #05070d 45%, #010104 100%);
+            color: #00ff9f;
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-header h1 {
+            font-size: 1.4rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #00ff9f;
+        }
+        .page-header a {
+            color: #00d4ff;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .widget {
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+            border: 2px solid #00ff9f;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 24px rgba(0, 255, 159, 0.25);
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #00ff9f40;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .widget-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #00ff9f;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .analyze-btn {
+            background: linear-gradient(135deg, #00ff9f 0%, #00d4ff 100%);
+            color: #0a0e1a;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .analyze-btn:hover {
+            box-shadow: 0 0 18px rgba(0, 255, 159, 0.6);
+            transform: translateY(-2px);
+        }
+        .analyze-btn:disabled {
+            background: #2a3f3f;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .auto-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: #00ff9f80;
+            text-transform: uppercase;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 20px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #2a3f3f;
+            transition: 0.4s;
+            border-radius: 20px;
+            border: 1px solid #00ff9f40;
+        }
+        .toggle-slider:before {
+            content: "";
+            position: absolute;
+            height: 12px;
+            width: 12px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #666;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #00ff9f;
+            box-shadow: 0 0 10px rgba(0, 255, 159, 0.5);
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+            background-color: #0a0e1a;
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #00ff9f40;
+        }
+        .stat-box {
+            background: rgba(0, 255, 159, 0.05);
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #00ff9f40;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #00ff9f80;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ff9f;
+        }
+        .insights-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .insights-container::-webkit-scrollbar { width: 8px; }
+        .insights-container::-webkit-scrollbar-track { background: #0f1419; border-radius: 4px; }
+        .insights-container::-webkit-scrollbar-thumb { background: #00ff9f40; border-radius: 4px; }
+        .insights-container::-webkit-scrollbar-thumb:hover { background: #00ff9f; }
+        .insight-card {
+            background: rgba(0, 255, 159, 0.05);
+            border-left: 3px solid;
+            padding: 15px;
+            border-radius: 4px;
+            animation: slideIn 0.3s ease-out;
+            transition: all 0.3s;
+        }
+        .insight-card:hover {
+            background: rgba(0, 255, 159, 0.1);
+            transform: translateX(5px);
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .insight-card.critical { border-left-color: #ff3366; }
+        .insight-card.warning { border-left-color: #ffaa00; }
+        .insight-card.success { border-left-color: #00ff9f; }
+        .insight-card.info { border-left-color: #00d4ff; }
+        .insight-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .insight-icon { font-size: 20px; filter: drop-shadow(0 0 5px currentColor); }
+        .insight-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #00ff9f;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .insight-description {
+            color: #a0e0c0;
+            line-height: 1.5;
+            font-size: 13px;
+            margin-left: 30px;
+        }
+        .insight-recommendation {
+            margin-top: 10px;
+            margin-left: 30px;
+            padding: 10px;
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 2px solid #00d4ff;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #80c0ff;
+        }
+        .insight-recommendation strong { color: #00d4ff; }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #00ff9f60;
+        }
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%,100% {opacity:0.5;} 50% {opacity:1;} }
+        .helper {
+            color: #5bd8ff;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header class="page-header">
+        <h1>Claude AI Performance Insights Widget</h1>
+        <a href="/analytics">&larr; Back to Analytics Overview</a>
+    </header>
+
+    <p class="helper">
+        Pulls live miner metrics, analyzes them with Claude, and returns actionable hashrate intelligence.
+        Set <code>CLAUDE_API_KEY</code> in your environment to enable live calls; otherwise, the widget serves curated samples.
+    </p>
+
+    <div class="widget" aria-live="polite">
+        <div class="widget-header">
+            <div class="widget-title">🤖 Claude AI Performance Insights</div>
+            <div class="header-controls">
+                <div class="auto-toggle">
+                    <span>Auto</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoAnalyze" onchange="toggleAuto()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <button class="analyze-btn" onclick="analyzeHashrate()" id="analyzeBtn">
+                    <span id="btnText">⚡ Analyze</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-label">Hashrate</div>
+                <div class="stat-value" id="statHashrate">-- TH/s</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Efficiency</div>
+                <div class="stat-value" id="statEfficiency">--%</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Temp Avg</div>
+                <div class="stat-value" id="statTemp">--°C</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Miners Online</div>
+                <div class="stat-value" id="statOnline">--/--</div>
+            </div>
+        </div>
+
+        <div class="insights-container" id="insightsContainer">
+            <div class="empty-state">
+                <div class="empty-state-icon">⚡</div>
+                <p>Click "Analyze" to get AI-powered insights<br>about your mining operation</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultDataset = {
+            hashrate: 6.82,
+            efficiency: 98.5,
+            tempAvg: 40.3,
+            minersOnline: 8,
+            minersTotal: 8,
+            rejectRate: 0.8,
+            powerUsage: 1190,
+            btcPrice: 43000,
+            timeSeriesData: {
+                hashrateVariation: [6.5, 6.8, 7.0, 6.7, 6.9, 6.82],
+                tempVariation: [38, 40, 42, 41, 40, 40.3],
+                rejectRateVariation: [0.5, 0.8, 1.2, 0.9, 0.7, 0.8]
+            }
+        };
+        let miningDataset = structuredClone(defaultDataset);
+        let autoInterval = null;
+
+        async function hydrateFromLiveStats() {
+            try {
+                const res = await fetch('/miner-data', { credentials: 'include' });
+                if (!res.ok) throw new Error('miner-data status ' + res.status);
+                const data = await res.json();
+                const miners = Object.values(data || {});
+                const online = miners.filter((m) => m && m.alive);
+                if (!online.length) throw new Error('no live miners');
+
+                const hashrate = online.reduce((sum, m) => sum + (Number(m.hashrate_1m) || 0), 0);
+                const efficiency = online.reduce((sum, m) => sum + (Number(m.efficiency) || 0), 0) / online.length;
+                const tempAvg = online.reduce((sum, m) => sum + (Number(m.temp) || 0), 0) / online.length;
+                const rejectRate = online.reduce((sum, m) => sum + (Number(m.sharesRejected) || 0), 0) /
+                    Math.max(1, online.reduce((sum, m) => sum + (Number(m.sharesAccepted) || 0), 0));
+                const powerUsage = online.reduce((sum, m) => sum + (Number(m.power) || 0), 0);
+
+                miningDataset = {
+                    ...defaultDataset,
+                    hashrate: Number(hashrate.toFixed(3)),
+                    efficiency: Number(efficiency.toFixed(2)),
+                    tempAvg: Number(tempAvg.toFixed(1)),
+                    minersOnline: online.length,
+                    minersTotal: miners.length || online.length,
+                    rejectRate: Number((rejectRate * 100).toFixed(2)),
+                    powerUsage: Math.round(powerUsage),
+                };
+            } catch (err) {
+                console.warn('Falling back to default dataset for insights:', err.message);
+                miningDataset = structuredClone(defaultDataset);
+            } finally {
+                renderStats(miningDataset);
+            }
+        }
+
+        function renderStats(dataset) {
+            document.getElementById('statHashrate').textContent = `${dataset.hashrate.toFixed(2)} TH/s`;
+            document.getElementById('statEfficiency').textContent = `${dataset.efficiency.toFixed(2)}%`;
+            document.getElementById('statTemp').textContent = `${dataset.tempAvg.toFixed(1)}°C`;
+            document.getElementById('statOnline').textContent = `${dataset.minersOnline}/${dataset.minersTotal}`;
+        }
+
+        async function analyzeHashrate() {
+            const btn = document.getElementById('analyzeBtn');
+            const btnText = document.getElementById('btnText');
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>Analyzing...';
+
+            try {
+                await hydrateFromLiveStats();
+                const response = await fetch('/analytics/claude-insights', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mining_data: miningDataset })
+                });
+                if (!response.ok) throw new Error('Claude insights status ' + response.status);
+                const payload = await response.json();
+                displayInsights(payload.insights || []);
+            } catch (error) {
+                console.error('Analysis error:', error);
+                displayError(error.message);
+            } finally {
+                btn.disabled = false;
+                btnText.innerHTML = '⚡ Analyze';
+            }
+        }
+
+        function displayInsights(insights) {
+            const container = document.getElementById('insightsContainer');
+            container.innerHTML = '';
+            if (!insights.length) {
+                container.innerHTML = `
+                    <div class="insight-card info">
+                        <div class="insight-header">
+                            <span class="insight-icon">ℹ️</span>
+                            <span class="insight-title">Awaiting Insights</span>
+                        </div>
+                        <div class="insight-description">
+                            Claude did not return any recommendations. Try again shortly.
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            insights.forEach((insight, index) => {
+                const card = document.createElement('div');
+                const typeClass = insight.type ? insight.type.toLowerCase() : 'info';
+                card.className = `insight-card ${typeClass}`;
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.innerHTML = `
+                    <div class="insight-header">
+                        <span class="insight-icon">${insight.icon || '⚡'}</span>
+                        <span class="insight-title">${insight.title || 'Insight'}</span>
+                    </div>
+                    <div class="insight-description">${insight.description || 'No description supplied.'}</div>
+                    ${insight.recommendation ? `
+                        <div class="insight-recommendation">
+                            <strong>💡 Action:</strong> ${insight.recommendation}
+                        </div>` : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function displayError(message) {
+            const container = document.getElementById('insightsContainer');
+            container.innerHTML = `
+                <div class="insight-card warning">
+                    <div class="insight-header">
+                        <span class="insight-icon">⚠️</span>
+                        <span class="insight-title">Analysis Failed</span>
+                    </div>
+                    <div class="insight-description">
+                        ${message || 'Unable to complete AI analysis. Check connection and try again.'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleAuto() {
+            const isEnabled = document.getElementById('autoAnalyze').checked;
+            if (isEnabled) {
+                analyzeHashrate();
+                autoInterval = setInterval(analyzeHashrate, 120000);
+            } else if (autoInterval) {
+                clearInterval(autoInterval);
+                autoInterval = null;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            hydrateFromLiveStats();
+        });
+    </script>
+</body>
+</html>

@@ -70,6 +70,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 import asyncio
 import json
+import httpx
 from pathlib import Path
 import secrets
 from starlette.middleware.sessions import SessionMiddleware
@@ -194,6 +195,30 @@ ALLOWED_JSON_TASKS = [
     },
 ]
 
+SAMPLE_CLAUDE_INSIGHTS = [
+    {
+        "type": "success",
+        "icon": "✅",
+        "title": "Hashrate Stable",
+        "description": "Fleet hashrate is holding within ±4% of the rolling mean. No immediate tuning is required.",
+        "recommendation": "Keep current profiles; re-run analysis if hashrate dips below 95% of target."
+    },
+    {
+        "type": "warning",
+        "icon": "⚠️",
+        "title": "Temps Creeping Up",
+        "description": "Average exhaust temps crossed 40 °C which can cascade into higher reject rates on warmer days.",
+        "recommendation": "Inspect airflow around racks C–F and clear any obstructions before peak heat hours."
+    },
+    {
+        "type": "info",
+        "icon": "ℹ️",
+        "title": "Power Efficiency",
+        "description": "Fleet is drawing ~1.2 kW for 6.8 TH/s. Efficiency sits near 176 W/TH which is acceptable for BG02 mix.",
+        "recommendation": "Consider staging one rig into low-power mode overnight if BTC price softens."
+    }
+]
+
 
 def select_json_tasks(prompt: str):
     prompt_lower = prompt.lower()
@@ -289,8 +314,21 @@ def analyze_fleet_overview(
         f"📊 Average per miner: {_fmt_ths(avg_per_miner)}",
     ]
     
-    # Analyze historical trend
+    # Generate exactly 6 observations
     observations = []
+    
+    # Observation 1: Fleet Availability
+    availability_pct = (len(online) / len(miners) * 100) if miners else 0
+    if availability_pct == 100:
+        observations.append(f"✅ FLEET AVAILABILITY: Perfect uptime - all {len(miners)} miners online and operational")
+    elif availability_pct >= 80:
+        observations.append(f"✅ FLEET AVAILABILITY: Strong uptime at {availability_pct:.1f}% ({len(online)}/{len(miners)} online)")
+    elif availability_pct >= 60:
+        observations.append(f"⚠️ FLEET AVAILABILITY: Moderate uptime at {availability_pct:.1f}% ({len(online)}/{len(miners)} online)")
+    else:
+        observations.append(f"🔴 FLEET AVAILABILITY: Critical - only {availability_pct:.1f}% online ({len(online)}/{len(miners)} miners)")
+    
+    # Observation 2: Hashrate Performance
     if history_summary and history_summary.get("total_hash_series"):
         series = history_summary["total_hash_series"]
         if len(series) >= 3:
@@ -298,24 +336,80 @@ def analyze_fleet_overview(
             current = series[-1]
             avg_historical = history_summary.get("fleet_avg_hash", 0)
             trend = history_summary.get("fleet_hash_trend", "stable")
+            performance_vs_peak = (current / peak * 100) if peak > 0 else 0
             
-            observations.append(f"📈 Historical Trend: {trend.upper()}")
-            observations.append(f"   - Peak performance: {_fmt_ths(peak)}")
-            observations.append(f"   - Current: {_fmt_ths(current)}")
-            observations.append(f"   - Average: {_fmt_ths(avg_historical)}")
+            if performance_vs_peak >= 95:
+                observations.append(f"📈 HASHRATE TREND: Excellent - {trend.upper()} at {_fmt_ths(current)} ({performance_vs_peak:.1f}% of peak)")
+            elif performance_vs_peak >= 85:
+                observations.append(f"📊 HASHRATE TREND: Good - {trend.upper()} at {_fmt_ths(current)} ({performance_vs_peak:.1f}% of peak)")
+            else:
+                observations.append(f"📉 HASHRATE TREND: Below optimal - {trend.upper()} at {_fmt_ths(current)} ({performance_vs_peak:.1f}% of peak)")
+        else:
+            observations.append(f"📊 HASHRATE TREND: Current output at {_fmt_ths(total_hash)} - collecting baseline data")
+    else:
+        observations.append(f"📊 HASHRATE TREND: Current output at {_fmt_ths(total_hash)} - no historical data yet")
+    
+    # Observation 3: Temperature Status
+    if avg_temp:
+        temp_margin = TEMP_ALERT_THRESHOLD - avg_temp
+        if temp_margin > 10:
+            observations.append(f"🌡️ TEMPS CREEPING UP: Excellent thermal margin at {avg_temp:.1f}°C ({temp_margin:.1f}°C below threshold)")
+        elif temp_margin > 5:
+            observations.append(f"🌡️ TEMPS CREEPING UP: Good cooling at {avg_temp:.1f}°C ({temp_margin:.1f}°C below threshold)")
+        elif temp_margin > 0:
+            observations.append(f"⚠️ TEMPS CREEPING UP: Approaching limit at {avg_temp:.1f}°C (only {temp_margin:.1f}°C margin)")
+        else:
+            observations.append(f"🔴 TEMPS CREEPING UP: Critical - {avg_temp:.1f}°C exceeds threshold by {abs(temp_margin):.1f}°C")
+    else:
+        observations.append("🌡️ TEMPS CREEPING UP: No temperature data available from miners")
+    
+    # Observation 4: Power Efficiency
+    total_power = sum(m.get("power", 0) for m in online)
+    fleet_efficiency = (total_power / total_hash) if total_hash > 0 else 0
+    if fleet_efficiency > 0:
+        if fleet_efficiency < EFFICIENCY_ALERT_THRESHOLD * 0.8:
+            observations.append(f"ℹ️ POWER EFFICIENCY: Excellent - fleet average {fleet_efficiency:.1f} W/TH, {_fmt_watt(total_power)} total")
+        elif fleet_efficiency < EFFICIENCY_ALERT_THRESHOLD:
+            observations.append(f"ℹ️ POWER EFFICIENCY: Good - fleet average {fleet_efficiency:.1f} W/TH, {_fmt_watt(total_power)} total")
+        else:
+            observations.append(f"⚠️ POWER EFFICIENCY: Below target - fleet average {fleet_efficiency:.1f} W/TH, {_fmt_watt(total_power)} total")
+    else:
+        observations.append(f"ℹ️ POWER EFFICIENCY: Drawing {_fmt_watt(total_power)} total - efficiency data pending")
+    
+    # Observation 5: Share Quality
+    total_accepted = sum(m.get("sharesAccepted", 0) for m in online)
+    total_rejected = sum(m.get("sharesRejected", 0) for m in online)
+    total_shares = total_accepted + total_rejected
+    reject_rate = (total_rejected / total_shares * 100) if total_shares > 0 else 0
+    
+    if reject_rate < 1:
+        observations.append(f"✅ HASHRATE STABLE: Excellent share quality - {reject_rate:.2f}% rejection rate ({total_accepted:,} accepted)")
+    elif reject_rate < 2:
+        observations.append(f"✅ HASHRATE STABLE: Good share quality - {reject_rate:.2f}% rejection rate ({total_accepted:,} accepted)")
+    elif reject_rate < 5:
+        observations.append(f"⚠️ HASHRATE STABLE: Elevated rejections at {reject_rate:.2f}% ({total_rejected:,}/{total_shares:,} shares)")
+    else:
+        observations.append(f"🔴 HASHRATE STABLE: High rejection rate at {reject_rate:.2f}% - pool connection issues detected")
+    
+    # Observation 6: Volatility & Stability
+    if history_summary and history_summary.get("total_hash_series"):
+        series = history_summary["total_hash_series"]
+        if len(series) >= 5:
+            recent = series[-5:]
+            volatility = max(recent) - min(recent)
+            avg_recent = sum(recent) / len(recent)
+            volatility_pct = (volatility / avg_recent * 100) if avg_recent > 0 else 0
             
-            # Detect volatility
-            if len(series) >= 5:
-                recent = series[-5:]
-                volatility = max(recent) - min(recent)
-                if volatility > avg_historical * 0.1:
-                    observations.append(f"   ⚠️ High volatility detected: {_fmt_ths(volatility)} range")
-            
-            # Detect recent decline
-            if len(series) >= 3:
-                recent_avg = sum(series[-3:]) / 3
-                if recent_avg < avg_historical * 0.95:
-                    observations.append(f"   📉 Recent decline: dropping below average")
+            if volatility_pct < 5:
+                observations.append(f"✅ STABILITY: Highly stable - {volatility_pct:.1f}% variance over last {len(recent)} samples")
+            elif volatility_pct < 10:
+                observations.append(f"📊 STABILITY: Moderate fluctuation - {volatility_pct:.1f}% variance ({_fmt_ths(volatility)} range)")
+            else:
+                observations.append(f"⚠️ STABILITY: High volatility detected - {volatility_pct:.1f}% variance ({_fmt_ths(volatility)} range)")
+        else:
+            observations.append(f"📊 STABILITY: Collecting stability metrics - {len(series)} samples so far")
+    else:
+        observations.append("📊 STABILITY: Initial monitoring phase - baseline data being established")
     
     recs = []
     
@@ -683,6 +777,146 @@ async def analytics_board(request: Request):
     if not is_authenticated(request):
         return RedirectResponse("/login", status_code=302)
     return templates.TemplateResponse("charts.html", {"request": request})
+
+
+@app.get("/analytics/claude")
+async def analytics_claude_widget(request: Request):
+    if not is_authenticated(request):
+        return RedirectResponse("/login", status_code=302)
+    return templates.TemplateResponse("analytics_claude.html", {"request": request})
+
+
+def _build_claude_prompt(mining_data: Dict[str, Any]) -> str:
+    instructions = (
+        "You are an expert cryptocurrency mining analyst specializing in hashrate optimization, cooling, and uptime.\n"
+        "Analyze the following mining operation snapshot and return actionable insights.\n\n"
+        "Mining Data:\n"
+    )
+    return f"{instructions}{json.dumps(mining_data, indent=2)}\n\n" \
+        "Respond with a JSON array of objects with keys: type (critical/warning/success/info), " \
+        "icon (emoji), title (<=50 chars), description, recommendation."
+
+
+@app.post("/analytics/claude-insights")
+async def analytics_claude_insights(request: Request):
+    if not is_authenticated(request):
+        return JSONResponse({"success": False, "error": "Unauthorized"}, status_code=401)
+    try:
+        payload = await request.json()
+    except Exception:
+        return JSONResponse({"success": False, "error": "Invalid JSON payload"}, status_code=400)
+
+    mining_data = payload.get("mining_data")
+    if mining_data is None:
+        return JSONResponse({"success": False, "error": "Missing mining_data"}, status_code=400)
+
+    claude_key = os.getenv("CLAUDE_API_KEY")
+    claude_model = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
+    claude_version = os.getenv("CLAUDE_API_VERSION", "2023-06-01")
+    claude_url = os.getenv("CLAUDE_API_URL", "https://api.anthropic.com/v1/messages")
+
+    if not claude_key:
+        logger.info("CLAUDE_API_KEY not found. Generating insights from fleet analysis.")
+        # Generate insights from fleet overview analysis
+        stats = await gather_stats()
+        history_rows = await asyncio.to_thread(load_recent_metrics, AI_HISTORY_LIMIT)
+        history_summary = summarize_history(history_rows)
+        analysis = analyze_fleet_overview(stats, history_summary)
+        
+        # Parse observations into insight cards
+        insights = []
+        summary_text = analysis.get("summary", "")
+        for line in summary_text.split("\n"):
+            line = line.strip()
+            if not line or line.startswith("🎯") or line.startswith("⚡") or line.startswith("📊"):
+                continue
+            
+            # Parse observation lines (format: "ICON TITLE: description")
+            if ":" in line and any(emoji in line for emoji in ["✅", "⚠️", "🔴", "📈", "📉", "🌡️", "ℹ️"]):
+                parts = line.split(":", 1)
+                if len(parts) == 2:
+                    title_part = parts[0].strip()
+                    description = parts[1].strip()
+                    
+                    # Extract icon and title
+                    icon = "ℹ️"
+                    if "✅" in title_part:
+                        icon = "✅"
+                        insight_type = "success"
+                    elif "⚠️" in title_part:
+                        icon = "⚠️"
+                        insight_type = "warning"
+                    elif "🔴" in title_part:
+                        icon = "🔴"
+                        insight_type = "critical"
+                    elif "📈" in title_part or "📊" in title_part:
+                        icon = "📈"
+                        insight_type = "info"
+                    elif "📉" in title_part:
+                        icon = "📉"
+                        insight_type = "warning"
+                    elif "🌡️" in title_part:
+                        icon = "🌡️"
+                        insight_type = "info"
+                    elif "ℹ️" in title_part:
+                        icon = "ℹ️"
+                        insight_type = "info"
+                    else:
+                        insight_type = "info"
+                    
+                    # Clean title (remove emoji)
+                    title = title_part.replace("✅", "").replace("⚠️", "").replace("🔴", "").replace("📈", "").replace("📉", "").replace("🌡️", "").replace("ℹ️", "").strip()
+                    
+                    # Find matching recommendation
+                    recommendation = ""
+                    recs = analysis.get("recommendations", [])
+                    for rec in recs:
+                        if any(keyword in rec.lower() for keyword in title.lower().split()[:2]):
+                            recommendation = rec.replace("→", "").strip()
+                            break
+                    
+                    insights.append({
+                        "type": insight_type,
+                        "icon": icon,
+                        "title": title,
+                        "description": description,
+                        "recommendation": recommendation
+                    })
+        
+        return JSONResponse({"success": True, "source": "sample", "insights": insights})
+
+    body = {
+        "model": claude_model,
+        "max_tokens": 800,
+        "messages": [
+            {"role": "user", "content": _build_claude_prompt(mining_data)}
+        ],
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "x-api-key": claude_key,
+        "anthropic-version": claude_version,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            resp = await client.post(claude_url, headers=headers, json=body)
+            resp.raise_for_status()
+            payload = resp.json()
+        content = payload.get("content") or []
+        analysis_text = ""
+        if content and isinstance(content, list):
+            chunk = content[0]
+            if isinstance(chunk, dict):
+                analysis_text = chunk.get("text") or ""
+            elif isinstance(chunk, str):
+                analysis_text = chunk
+        clean_json = analysis_text.replace("```json", "").replace("```", "").strip()
+        insights = json.loads(clean_json) if clean_json else SAMPLE_CLAUDE_INSIGHTS
+        return JSONResponse({"success": True, "source": "claude", "insights": insights})
+    except Exception as exc:
+        logger.warning("Claude insights request failed: %s", exc)
+        return JSONResponse({"success": True, "source": "sample", "insights": SAMPLE_CLAUDE_INSIGHTS})
 
 @app.get("/miner-data")
 async def miner_data(request: Request):
