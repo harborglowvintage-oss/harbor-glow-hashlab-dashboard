@@ -279,23 +279,86 @@ def analyze_fleet_overview(
     total_hash = sum(m.get("hashrate_1m", 0) for m in online)
     temps = [m.get("temp", 0) for m in online if m.get("temp")]
     avg_temp = sum(temps) / len(temps) if temps else None
-    summary = (
-        f"{len(online)}/{len(miners)} miners responding. "
-        f"Fleet hash ≈ {_fmt_ths(total_hash)}."
-    )
+    avg_per_miner = total_hash / len(online) if online else 0
+    
+    # Enhanced summary with key observations
+    summary_lines = [
+        f"🎯 Fleet Status: {len(online)}/{len(miners)} miners online",
+        f"⚡ Total Hashrate: {_fmt_ths(total_hash)}",
+        f"📊 Average per miner: {_fmt_ths(avg_per_miner)}",
+    ]
+    
+    # Analyze historical trend
+    observations = []
+    if history_summary and history_summary.get("total_hash_series"):
+        series = history_summary["total_hash_series"]
+        if len(series) >= 3:
+            peak = max(series)
+            current = series[-1]
+            avg_historical = history_summary.get("fleet_avg_hash", 0)
+            trend = history_summary.get("fleet_hash_trend", "stable")
+            
+            observations.append(f"📈 Historical Trend: {trend.upper()}")
+            observations.append(f"   - Peak performance: {_fmt_ths(peak)}")
+            observations.append(f"   - Current: {_fmt_ths(current)}")
+            observations.append(f"   - Average: {_fmt_ths(avg_historical)}")
+            
+            # Detect volatility
+            if len(series) >= 5:
+                recent = series[-5:]
+                volatility = max(recent) - min(recent)
+                if volatility > avg_historical * 0.1:
+                    observations.append(f"   ⚠️ High volatility detected: {_fmt_ths(volatility)} range")
+            
+            # Detect recent decline
+            if len(series) >= 3:
+                recent_avg = sum(series[-3:]) / 3
+                if recent_avg < avg_historical * 0.95:
+                    observations.append(f"   📉 Recent decline: dropping below average")
+    
     recs = []
+    
+    # Check for offline miners
     if offline:
-        recs.append(f"{len(offline)} miners offline: {', '.join(m['name'] for m in offline)}.")
-    if avg_temp and avg_temp > (TEMP_ALERT_THRESHOLD - 5):
-        recs.append(f"Average chassis temp {avg_temp:.1f} °C; watch cooling headroom.")
-    if history_summary and history_summary.get("fleet_avg_hash"):
-        recs.append(
-            f"Historical fleet avg {_fmt_ths(history_summary['fleet_avg_hash'])} "
-            f"({history_summary.get('fleet_hash_trend', 'stable')} trend)."
-        )
+        recs.append(f"🔴 {len(offline)} miners offline: {', '.join(m['name'] for m in offline)}")
+        recs.append("   → Check power, network connections, and restart if needed")
+    
+    # Check for underperforming miners
+    underperforming = [m for m in online if m.get("hashrate_1m", 0) < 7.0]
+    if underperforming:
+        recs.append(f"⚠️ {len(underperforming)} miners underperforming (<7 TH/s):")
+        for m in underperforming[:3]:
+            recs.append(f"   - {m['name']}: {_fmt_ths(m.get('hashrate_1m', 0))}")
+        recs.append("   → Check for throttling, cooling, or hardware issues")
+    
+    # Temperature monitoring
+    if avg_temp:
+        if avg_temp > TEMP_ALERT_THRESHOLD:
+            recs.append(f"🌡️ High temps: Average {avg_temp:.1f}°C (threshold: {TEMP_ALERT_THRESHOLD}°C)")
+            recs.append("   → Improve ventilation, check fans, reduce ambient temperature")
+        elif avg_temp > (TEMP_ALERT_THRESHOLD - 5):
+            recs.append(f"🌡️ Temps approaching threshold: {avg_temp:.1f}°C")
+            recs.append("   → Monitor closely, prepare cooling improvements")
+    
+    # Check rejection rates
+    high_rejects = [m for m in online if (m.get("sharesRejected", 0) / max(m.get("sharesAccepted", 1), 1)) > 0.02]
+    if high_rejects:
+        recs.append(f"📡 {len(high_rejects)} miners with high rejection rates (>2%):")
+        for m in high_rejects[:3]:
+            total = m.get("sharesAccepted", 0) + m.get("sharesRejected", 0)
+            rate = (m.get("sharesRejected", 0) / total * 100) if total > 0 else 0
+            recs.append(f"   - {m['name']}: {rate:.1f}% rejects")
+        recs.append("   → Check network connection, pool settings, or switch pools")
+    
+    # Positive feedback if everything is good
     if not recs:
-        recs.append("All monitored miners responding within expected ranges.")
-    data = [_sanitize_miner(m) for m in online[:5]]
+        recs.append("✅ Fleet operating within optimal parameters")
+        recs.append(f"   - All {len(online)} miners performing above 7 TH/s")
+        recs.append(f"   - Temperatures stable at {avg_temp:.1f}°C" if avg_temp else "   - Temperature monitoring active")
+        recs.append("   - Rejection rates healthy (<2%)")
+    
+    summary = "\n".join(summary_lines + [""] + observations)
+    data = [_sanitize_miner(m) for m in online]
     return {"summary": summary, "recommendations": recs, "data": data}
 
 
