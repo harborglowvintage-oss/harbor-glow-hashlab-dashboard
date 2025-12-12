@@ -78,14 +78,23 @@ async def fetch_miner_stats(name: str, ip: str) -> Dict[str, Any]:
         power = data.get("power", 0)
         efficiency = power / hashrate_1m if hashrate_1m > 0 else 0
 
+        # For NerdAxe: temp is ASIC temp, vrTemp is VR regulator temp
+        # For BitAxe: chipTemp is ASIC temp, temp/vrTemp are board temps
+        if mtype == "NERDQ":
+            asic_temp = data.get("temp", 0)
+            board_temp = data.get("vrTemp", 0)
+        else:
+            asic_temp = data.get("chipTemp", 0)
+            board_temp = data.get("temp", data.get("vrTemp", 0))
+        
         miner_payload = {
             "name": name,
             "type": mtype,
             "hashrate_1m": hashrate_1m,
             "hashrate_24h": hashrate_24h,
             "efficiency": efficiency,
-            "temp": data.get("temp", data.get("vrTemp", 0)),
-            "chipTemp": data.get("chipTemp", 0),
+            "temp": board_temp,
+            "chipTemp": asic_temp,
             "power": power,
             "sharesAccepted": data.get("sharesAccepted", 0),
             "sharesRejected": data.get("sharesRejected", 0),
