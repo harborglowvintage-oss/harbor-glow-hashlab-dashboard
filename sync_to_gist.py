@@ -109,7 +109,7 @@ async def update_gist(data: Dict[str, Any]) -> bool:
     
     url = f"https://api.github.com/gists/{GIST_ID}"
     headers = {
-        "Authorization": f"token {GIST_TOKEN}",
+        "Authorization": f"Bearer {GIST_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
     

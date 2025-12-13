@@ -6,6 +6,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
 from contextlib import suppress
+from time import time
 
 
 def _env_flag(name: str, default: bool = True) -> bool:
@@ -92,7 +93,6 @@ app.add_middleware(LANOnlyMiddleware)
 from miner_api import fetch_miner_stats
 from data_logger import log_miner_metrics, load_recent_metrics
 from btcrealtimetracker import btc_price_api, btc_price_api_24h
-from time import time
 
 # Create directories if they don't exist
 Path("static").mkdir(exist_ok=True)
