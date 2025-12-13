@@ -6,6 +6,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
 from contextlib import suppress
+from time import time
 
 
 def _env_flag(name: str, default: bool = True) -> bool:
@@ -96,6 +97,61 @@ from btcrealtimetracker import btc_price_api, btc_price_api_24h
 # Create directories if they don't exist
 Path("static").mkdir(exist_ok=True)
 Path("templates").mkdir(exist_ok=True)
+
+# Cloud Mode Configuration
+CLOUD_MODE = _env_flag("CLOUD_MODE", False)
+GIST_RAW_URL = os.getenv(
+    "GIST_RAW_URL",
+    "https://gist.githubusercontent.com/harborglowvintage-oss/9e0d60bcc84c808f505f9a4bfea0bc2f/raw/miner_data.json"
+)
+GIST_CACHE_TTL = int(os.getenv("GIST_CACHE_TTL", "30"))  # Cache for 30 seconds by default
+
+# Gist data cache
+_gist_cache = {
+    "data": None,
+    "timestamp": 0,
+}
+
+async def fetch_from_gist() -> Optional[Dict[str, Any]]:
+    """Fetch miner data from GitHub Gist with caching"""
+    now = time()
+    
+    # Return cached data if still valid
+    if _gist_cache["data"] and (now - _gist_cache["timestamp"]) < GIST_CACHE_TTL:
+        logger.debug("Using cached Gist data")
+        return _gist_cache["data"]
+    
+    logger.info("Fetching fresh data from Gist...")
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(GIST_RAW_URL)
+            response.raise_for_status()
+            data = response.json()
+        
+        # Extract miners data from the Gist payload
+        miners_data = data.get("miners", {})
+        
+        # Update cache
+        _gist_cache["data"] = miners_data
+        _gist_cache["timestamp"] = now
+        
+        logger.info(f"Fetched {len(miners_data)} miner(s) from Gist (last_updated: {data.get('last_updated', 'unknown')})")
+        return miners_data
+    
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP error fetching from Gist: {e.response.status_code}")
+        # Return cached data even if expired, if available
+        if _gist_cache["data"]:
+            logger.warning("Returning stale cached data due to fetch error")
+            return _gist_cache["data"]
+        return None
+    except Exception as e:
+        logger.error(f"Error fetching from Gist: {e}")
+        # Return cached data even if expired, if available
+        if _gist_cache["data"]:
+            logger.warning("Returning stale cached data due to fetch error")
+            return _gist_cache["data"]
+        return None
 
 
 app.include_router(btc_price_api.router)
@@ -599,10 +655,18 @@ async def periodic_metric_logger():
 
 @app.on_event("startup")
 async def startup_event():
-    await prune_inactive_miners_on_startup()
+    # Log the operating mode
+    if CLOUD_MODE:
+        logger.info("*** CLOUD_MODE enabled - fetching miner data from GitHub Gist ***")
+        logger.info(f"Gist URL: {GIST_RAW_URL}")
+        logger.info(f"Cache TTL: {GIST_CACHE_TTL} seconds")
+    else:
+        logger.info("*** LOCAL MODE - polling miners directly from LAN ***")
+        await prune_inactive_miners_on_startup()
+    
     # Only start periodic logger in development, not in production/cloud environments
-    if os.getenv("RENDER") or os.getenv("ENVIRONMENT") == "production":
-        logger.info("Production environment detected - skipping periodic logger")
+    if os.getenv("RENDER") or os.getenv("ENVIRONMENT") == "production" or CLOUD_MODE:
+        logger.info("Production/cloud environment detected - skipping periodic logger")
         return
     if DATA_LOG_INTERVAL <= 0:
         return
@@ -665,6 +729,20 @@ async def prune_inactive_miners_on_startup():
 
 
 async def gather_stats():
+    """Gather miner statistics - from Gist in cloud mode, or directly from miners in local mode"""
+    if CLOUD_MODE:
+        # Fetch from GitHub Gist in cloud mode
+        logger.debug("CLOUD_MODE enabled - fetching from Gist")
+        gist_data = await fetch_from_gist()
+        
+        if gist_data:
+            return gist_data
+        else:
+            # Fallback to empty data if Gist is unavailable
+            logger.warning("Gist data unavailable - returning empty miner stats")
+            return {}
+    
+    # Local mode - poll miners directly
     items = list(MINERS.items())
     tasks = [fetch_miner_stats(name, ip) for name, ip in items]
     results = await asyncio.gather(*tasks)

@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 *.log
 .env
+.env.sync
 .venv/
 venv/
 .pytest_cache/

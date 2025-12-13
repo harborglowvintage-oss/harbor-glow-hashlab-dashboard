@@ -9,6 +9,8 @@ services:
         generateValue: true
       - key: LAN_ONLY_MODE
         value: false
+      - key: CLOUD_MODE
+        value: true
       - key: DATA_LOG_INTERVAL
         value: 60
       - key: AI_HISTORY_LIMIT
