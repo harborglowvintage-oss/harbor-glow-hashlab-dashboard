@@ -1319,14 +1319,19 @@ async def pool_comparison_data(request: Request):
             # Look up corresponding local miner key using reverse mapping
             if pool_worker_name in reverse_mapping:
                 local_miner_key = reverse_mapping[pool_worker_name]
+                # Normalize hashrate from H/s (raw) to TH/s (display)
+                hashrate_raw = worker.get("hashrate", 0)
+                hashrate_ths = hashrate_raw / 1e12
+                
                 pool_miners[local_miner_key] = {
-                    "hashrate": worker.get("hashrate", 0),
+                    "hashrate": hashrate_ths,  # Store in TH/s for frontend display
+                    "hashrate_raw": hashrate_raw,  # Keep raw for reference
                     "efficiency": worker.get("efficiency", 0),
                     "status": worker_status,
                     "updatedAt": worker.get("updatedAt") or worker.get("updated_at"),
                     "pool_name": pool_worker_name
                 }
-                logger.debug("Added pool worker %s -> local miner %s with %.2f TH/s", pool_worker_name, local_miner_key, worker.get("hashrate", 0)/1e12)
+                logger.debug("Added pool worker %s -> local miner %s with %.2f TH/s", pool_worker_name, local_miner_key, hashrate_ths)
             else:
                 # Log unmapped workers but don't include them to avoid duplicates
                 logger.warning("Pool worker '%s' has no mapping in pool_worker_mapping.json", pool_worker_name)
