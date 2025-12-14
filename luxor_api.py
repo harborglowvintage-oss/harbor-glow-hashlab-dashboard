@@ -31,13 +31,13 @@ async def debug_luxor_connection() -> Dict:
         return config
     
     headers = {
-        "x-lux-api-key": api_key,
+        "Authorization": api_key,
         "Content-Type": "application/json",
     }
     
     params = {
         "subaccount_names": subaccount,
-        "status": "active",
+        "status": "ACTIVE",
         "limit": 10,  # Small limit for debug
     }
     
@@ -53,7 +53,7 @@ async def debug_luxor_connection() -> Dict:
         
         if response.status_code == 200:
             try:
-                data = await response.json()
+                data = response.json()
                 config["json_valid"] = True
                 config["json_structure"] = list(data.keys()) if isinstance(data, dict) else "list"
             except Exception as e:
@@ -86,16 +86,16 @@ async def get_luxor_data(api_key: str | None = None, subaccount: str | None = No
         logger.warning("LUXOR_SUBACCOUNT not configured.")
         return None
 
-    # Use x-lux-api-key header (not Bearer token)
+    # Use Authorization header with API key
     headers = {
-        "x-lux-api-key": api_key,
+        "Authorization": api_key,
         "Content-Type": "application/json",
     }
     
     # Query parameters for filtering workers
     params = {
         "subaccount_names": subaccount,
-        "status": "active",
+        "status": "ACTIVE",
         "limit": 250,
     }
 
@@ -106,7 +106,7 @@ async def get_luxor_data(api_key: str | None = None, subaccount: str | None = No
             response = await client.get(url, headers=headers, params=params)
 
         response.raise_for_status()
-        data = await response.json()
+        data = response.json()
 
         logger.debug("Luxor API response received: %s", data)
         
