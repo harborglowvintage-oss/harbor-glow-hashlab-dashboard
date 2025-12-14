@@ -1307,6 +1307,12 @@ async def pool_comparison_data(request: Request):
     pool_miners = {}
     if pool_data_raw:
         for worker in pool_data_raw:
+            # Only process ACTIVE workers
+            worker_status = worker.get("status", "unknown").upper()
+            if worker_status != "ACTIVE":
+                logger.debug("Skipping inactive worker '%s' with status: %s", worker.get("name"), worker_status)
+                continue
+            
             # Get pool worker name from response
             pool_worker_name = worker.get("name") or worker.get("workerName", "Unknown")
             
@@ -1316,20 +1322,14 @@ async def pool_comparison_data(request: Request):
                 pool_miners[local_miner_key] = {
                     "hashrate": worker.get("hashrate", 0),
                     "efficiency": worker.get("efficiency", 0),
-                    "status": worker.get("status", "unknown"),
+                    "status": worker_status,
                     "updatedAt": worker.get("updatedAt") or worker.get("updated_at"),
                     "pool_name": pool_worker_name
                 }
+                logger.debug("Added pool worker %s -> local miner %s with %.2f TH/s", pool_worker_name, local_miner_key, worker.get("hashrate", 0)/1e12)
             else:
-                # Fallback: use pool worker name as key if no mapping exists
-                logger.debug("No mapping for pool worker '%s', using as-is", pool_worker_name)
-                pool_miners[pool_worker_name] = {
-                    "hashrate": worker.get("hashrate", 0),
-                    "efficiency": worker.get("efficiency", 0),
-                    "status": worker.get("status", "unknown"),
-                    "updatedAt": worker.get("updatedAt") or worker.get("updated_at"),
-                    "pool_name": pool_worker_name
-                }
+                # Log unmapped workers but don't include them to avoid duplicates
+                logger.warning("Pool worker '%s' has no mapping in pool_worker_mapping.json", pool_worker_name)
             
     return {
         "local": local_data,

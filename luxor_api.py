@@ -115,13 +115,17 @@ async def get_luxor_data(api_key: str | None = None, subaccount: str | None = No
         workers = data.get("data", data.get("workers", []))
         if not isinstance(workers, list):
             workers = [workers] if workers else []
+        
+        # Filter to only ACTIVE workers (double-check even though we filter in query)
+        active_workers = [w for w in workers if w.get("status", "").upper() == "ACTIVE"]
+        logger.debug("Luxor API returned %d total workers, %d active", len(workers), len(active_workers))
 
         # Calculate aggregate hashrate for logging
-        total_hashrate = sum(w.get("hashrate", 0) for w in workers)
+        total_hashrate = sum(w.get("hashrate", 0) for w in active_workers)
         total_hashrate_ths = total_hashrate / 1e12 if total_hashrate > 0 else 0
         
-        logger.debug("Luxor API returned %d workers with total hashrate: %.2f TH/s", len(workers), total_hashrate_ths)
-        return workers
+        logger.debug("Luxor API active workers total hashrate: %.2f TH/s", total_hashrate_ths)
+        return active_workers
 
     except httpx.HTTPStatusError as exc:
         body = exc.response.text if exc.response is not None else "no body"
