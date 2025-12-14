@@ -1268,20 +1268,22 @@ async def pool_comparison_data(request: Request):
     # Fetch pool data
     pool_data_raw = await get_luxor_data()
     
-    # Process pool data
+    # Process pool data (REST API v2 format)
     pool_miners = {}
     if pool_data_raw:
-        for edge in pool_data_raw:
-            node = edge.get("node", {})
-            worker_name = node.get("workerName", "Unknown")
+        for worker in pool_data_raw:
+            # REST API v2 returns workers directly (not wrapped in edges/nodes)
+            worker_name = worker.get("name") or worker.get("workerName", "Unknown")
+            
             # Normalize worker name if needed (e.g., user.worker -> worker)
             if "." in worker_name:
                 worker_name = worker_name.split(".")[-1]
             
             pool_miners[worker_name] = {
-                "hashrate": node.get("hashrate", 0),
-                "efficiency": node.get("efficiency", 0),
-                "updatedAt": node.get("updatedAt")
+                "hashrate": worker.get("hashrate", 0),
+                "efficiency": worker.get("efficiency", 0),
+                "status": worker.get("status", "unknown"),
+                "updatedAt": worker.get("updatedAt") or worker.get("updated_at")
             }
             
     return {
