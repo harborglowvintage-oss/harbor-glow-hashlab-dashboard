@@ -67,7 +67,19 @@ class LANOnlyMiddleware(BaseHTTPMiddleware):
             return HTMLResponse("<h3>Access denied: Invalid IP</h3>", status_code=403)
         return await call_next(request)
 
-# Add LAN-only middleware AFTER the FastAPI app is created (see below)
+
+# Cache control middleware for development (disable caching on /static for live updates)
+class CacheControlMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        # Disable caching for static files in development mode (allow fresh reloads)
+        if request.url.path.startswith('/static'):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
+# Add middlewares AFTER the FastAPI app is created (see below)
 from fastapi import FastAPI, Request, Form, Response, status, Depends, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -93,6 +105,7 @@ app = FastAPI()
 # Use a persistent secret key if available, otherwise generate one (which invalidates sessions on restart)
 secret_key = os.getenv("SESSION_SECRET_KEY", secrets.token_hex(32))
 app.add_middleware(SessionMiddleware, secret_key=secret_key)
+app.add_middleware(CacheControlMiddleware)
 app.add_middleware(LANOnlyMiddleware)
 
 from miner_api import fetch_miner_stats
