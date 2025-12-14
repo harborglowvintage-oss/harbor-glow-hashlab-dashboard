@@ -58,6 +58,32 @@
             font-weight: 400;
         }
 
+        .breadcrumb {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 24px;
+            font-size: 12px;
+            color: #666;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .breadcrumb a {
+            color: #06b6d4;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: #10b981;
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+        }
+
+        .breadcrumb span {
+            color: #444;
+        }
+
         .miner-selector {
             display: flex;
             gap: 12px;
@@ -452,22 +478,69 @@
             </div>
         </div>
 
-        <!-- Pool Comparison Chart (Oversized) -->
-        <div class="chart-container" style="margin-top: 24px; min-height: 400px;">
-            <div class="chart-title">Pool vs Local Hashrate Comparison (Luxor)</div>
-            <div class="chart-content">
-                <svg id="poolComparisonChart" viewBox="0 0 800 300" style="width: 100%; height: 350px;">
+        <!-- Pool Comparison Chart (Oversized & Functional) -->
+        <div class="chart-container" style="margin-top: 32px; min-height: 550px; background: linear-gradient(135deg, rgba(6,182,212,0.05), rgba(16,185,129,0.05)); border: 2px solid #06b6d4; border-radius: 12px; padding: 24px;">
+            <div class="chart-title" style="font-size: 18px; margin-bottom: 20px; letter-spacing: 1px;">⚡ POOL VS LOCAL HASHRATE COMPARISON</div>
+            
+            <!-- Comparison Stats -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                <div style="background: #0a1416; border: 1px solid #06b6d4; border-radius: 8px; padding: 16px; text-align: center;">
+                    <div style="color: #06b6d4; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Local Total Hashrate</div>
+                    <div id="localHashrateTotal" style="color: #10b981; font-size: 24px; font-weight: bold;">0.00 TH/s</div>
+                </div>
+                <div style="background: #0a1416; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; text-align: center;">
+                    <div style="color: #f59e0b; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Pool Total Hashrate</div>
+                    <div id="poolHashrateTotal" style="color: #f59e0b; font-size: 24px; font-weight: bold;">0.00 TH/s</div>
+                </div>
+                <div style="background: #0a1416; border: 1px solid #8b5cf6; border-radius: 8px; padding: 16px; text-align: center;">
+                    <div style="color: #8b5cf6; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Difference</div>
+                    <div id="hashrateDifference" style="color: #8b5cf6; font-size: 24px; font-weight: bold;">0.00 TH/s</div>
+                </div>
+                <div style="background: #0a1416; border: 1px solid #ec4899; border-radius: 8px; padding: 16px; text-align: center;">
+                    <div style="color: #ec4899; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Variance</div>
+                    <div id="hashrateVariance" style="color: #ec4899; font-size: 24px; font-weight: bold;">0%</div>
+                </div>
+            </div>
+
+            <!-- Large Bar Chart -->
+            <div style="background: #050a0c; border: 1px solid #1a3a3f; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+                <svg id="poolComparisonChart" viewBox="0 0 1000 400" style="width: 100%; height: 400px; display: block;">
                     <defs>
                         <linearGradient id="localGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:0.8" />
-                            <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:0.2" />
+                            <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:0.3" />
                         </linearGradient>
                         <linearGradient id="poolGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0.8" />
-                            <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:0.2" />
+                            <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:0.3" />
                         </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
                     </defs>
+                    <!-- Grid and axes will be drawn by JavaScript -->
+                    <g id="chartContent"></g>
                 </svg>
+            </div>
+
+            <!-- Legend & Status -->
+            <div style="display: flex; gap: 24px; padding: 16px; background: #0a1416; border-radius: 8px; border: 1px solid #1a3a3f;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 16px; height: 16px; background: #06b6d4; border-radius: 2px;"></div>
+                    <span style="color: #06b6d4; font-size: 12px;">Local Miners</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 16px; height: 16px; background: #f59e0b; border-radius: 2px;"></div>
+                    <span style="color: #f59e0b; font-size: 12px;">Luxor Pool</span>
+                </div>
+                <div style="flex: 1;"></div>
+                <div id="poolStatus" style="color: #888; font-size: 12px;">
+                    Loading pool data...
+                </div>
             </div>
         </div>
 
@@ -850,28 +923,20 @@
             renderPoolComparisonChart() {
                 if (!this.data) return;
                 const svg = document.getElementById('poolComparisonChart');
-                // Clear previous content but keep defs
-                const defs = svg.querySelector('defs');
-                svg.innerHTML = '';
-                if (defs) svg.appendChild(defs);
+                const chartContent = svg.querySelector('#chartContent');
+                chartContent.innerHTML = ''; // Clear previous bars
+
+                // Update stats cards
+                this.updatePoolComparisonStats();
 
                 // Check if pool data exists
                 const hasPoolData = this.poolData && Object.keys(this.poolData).length > 0;
-                if (!hasPoolData) {
-                     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                     text.setAttribute('x', 400);
-                     text.setAttribute('y', 150);
-                     text.setAttribute('text-anchor', 'middle');
-                     text.setAttribute('fill', '#ef4444');
-                     text.setAttribute('font-size', '14');
-                     text.textContent = '⚠️ Pool data unavailable - Showing local stats only';
-                     svg.appendChild(text);
-                }
-
+                
                 const miners = Object.keys(this.data).sort();
-                const width = 800;
-                const height = 300;
-                const padding = { top: 40, right: 40, bottom: 40, left: 60 };
+                const viewBox = svg.getAttribute('viewBox').split(' ').map(Number);
+                const width = viewBox[2];
+                const height = viewBox[3];
+                const padding = { top: 50, right: 60, bottom: 50, left: 80 };
                 const chartWidth = width - padding.left - padding.right;
                 const chartHeight = height - padding.top - padding.bottom;
 
@@ -882,33 +947,12 @@
                     const pool = (this.poolData && this.poolData[m]?.hashrate) || 0;
                     maxHash = Math.max(maxHash, local, pool);
                 });
-                maxHash = Math.max(maxHash, 10); // Minimum scale
+                maxHash = Math.max(maxHash, 10);
 
-                const barWidth = (chartWidth / miners.length) * 0.3;
+                const barWidth = (chartWidth / miners.length) * 0.35;
                 const groupWidth = chartWidth / miners.length;
 
-                // Draw axes
-                const axisGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                
-                // Y Axis
-                const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                yAxis.setAttribute('x1', padding.left);
-                yAxis.setAttribute('y1', padding.top);
-                yAxis.setAttribute('x2', padding.left);
-                yAxis.setAttribute('y2', height - padding.bottom);
-                yAxis.setAttribute('stroke', '#333');
-                axisGroup.appendChild(yAxis);
-
-                // X Axis
-                const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                xAxis.setAttribute('x1', padding.left);
-                xAxis.setAttribute('y1', height - padding.bottom);
-                xAxis.setAttribute('x2', width - padding.right);
-                xAxis.setAttribute('y2', height - padding.bottom);
-                xAxis.setAttribute('stroke', '#333');
-                axisGroup.appendChild(xAxis);
-
-                // Grid lines
+                // Draw Y-axis scale labels
                 for (let i = 0; i <= 5; i++) {
                     const y = height - padding.bottom - (i * chartHeight / 5);
                     const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -916,30 +960,29 @@
                     gridLine.setAttribute('y1', y);
                     gridLine.setAttribute('x2', width - padding.right);
                     gridLine.setAttribute('y2', y);
-                    gridLine.setAttribute('stroke', '#222');
-                    gridLine.setAttribute('stroke-dasharray', '4 4');
-                    axisGroup.appendChild(gridLine);
+                    gridLine.setAttribute('stroke', '#1a3a3f');
+                    gridLine.setAttribute('stroke-dasharray', '3 3');
+                    chartContent.appendChild(gridLine);
 
                     const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    label.setAttribute('x', padding.left - 10);
-                    label.setAttribute('y', y + 4);
+                    label.setAttribute('x', padding.left - 15);
+                    label.setAttribute('y', y + 5);
                     label.setAttribute('text-anchor', 'end');
-                    label.setAttribute('fill', '#666');
-                    label.setAttribute('font-size', '12');
-                    label.textContent = Math.round(maxHash * i / 5);
-                    axisGroup.appendChild(label);
+                    label.setAttribute('fill', '#06b6d4');
+                    label.setAttribute('font-size', '11');
+                    label.setAttribute('font-weight', 'bold');
+                    label.textContent = (maxHash * i / 5).toFixed(1) + ' TH/s';
+                    chartContent.appendChild(label);
                 }
 
-                svg.appendChild(axisGroup);
-
-                // Draw bars
+                // Draw bars with enhanced styling
                 miners.forEach((miner, i) => {
                     const localHash = this.data[miner]?.hashrate_1m || 0;
-                    const poolHash = (this.poolData && this.poolData[miner]?.hashrate) || 0;
+                    const poolHash = (hasPoolData && this.poolData && this.poolData[miner]?.hashrate) || 0;
                     
-                    const x = padding.left + (i * groupWidth) + (groupWidth - barWidth * 2) / 2;
+                    const x = padding.left + (i * groupWidth) + (groupWidth - barWidth * 2 - 8) / 2;
                     
-                    // Local Bar
+                    // Local Bar with glow
                     const localHeight = (localHash / maxHash) * chartHeight;
                     const localBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                     localBar.setAttribute('x', x);
@@ -948,70 +991,125 @@
                     localBar.setAttribute('height', localHeight);
                     localBar.setAttribute('fill', 'url(#localGradient)');
                     localBar.setAttribute('stroke', '#06b6d4');
-                    localBar.setAttribute('stroke-width', '1');
-                    svg.appendChild(localBar);
+                    localBar.setAttribute('stroke-width', '2');
+                    localBar.setAttribute('filter', 'url(#glow)');
+                    localBar.setAttribute('class', 'chart-bar');
+                    localBar.setAttribute('data-value', localHash.toFixed(2));
+                    chartContent.appendChild(localBar);
 
-                    // Pool Bar
-                    const poolHeight = (poolHash / maxHash) * chartHeight;
-                    const poolBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                    poolBar.setAttribute('x', x + barWidth + 4);
-                    poolBar.setAttribute('y', height - padding.bottom - poolHeight);
-                    poolBar.setAttribute('width', barWidth);
-                    poolBar.setAttribute('height', poolHeight);
-                    poolBar.setAttribute('fill', 'url(#poolGradient)');
-                    poolBar.setAttribute('stroke', '#f59e0b');
-                    poolBar.setAttribute('stroke-width', '1');
-                    svg.appendChild(poolBar);
+                    // Value label for local bar
+                    const localLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    localLabel.setAttribute('x', x + barWidth / 2);
+                    localLabel.setAttribute('y', height - padding.bottom - localHeight - 8);
+                    localLabel.setAttribute('text-anchor', 'middle');
+                    localLabel.setAttribute('fill', '#06b6d4');
+                    localLabel.setAttribute('font-size', '10');
+                    localLabel.setAttribute('font-weight', 'bold');
+                    localLabel.textContent = localHash.toFixed(1);
+                    chartContent.appendChild(localLabel);
 
-                    // X Label
+                    // Pool Bar (only if data exists)
+                    if (hasPoolData && poolHash > 0) {
+                        const poolHeight = (poolHash / maxHash) * chartHeight;
+                        const poolBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        poolBar.setAttribute('x', x + barWidth + 8);
+                        poolBar.setAttribute('y', height - padding.bottom - poolHeight);
+                        poolBar.setAttribute('width', barWidth);
+                        poolBar.setAttribute('height', poolHeight);
+                        poolBar.setAttribute('fill', 'url(#poolGradient)');
+                        poolBar.setAttribute('stroke', '#f59e0b');
+                        poolBar.setAttribute('stroke-width', '2');
+                        poolBar.setAttribute('filter', 'url(#glow)');
+                        poolBar.setAttribute('class', 'chart-bar');
+                        chartContent.appendChild(poolBar);
+
+                        // Value label for pool bar
+                        const poolLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        poolLabel.setAttribute('x', x + barWidth + 8 + barWidth / 2);
+                        poolLabel.setAttribute('y', height - padding.bottom - poolHeight - 8);
+                        poolLabel.setAttribute('text-anchor', 'middle');
+                        poolLabel.setAttribute('fill', '#f59e0b');
+                        poolLabel.setAttribute('font-size', '10');
+                        poolLabel.setAttribute('font-weight', 'bold');
+                        poolLabel.textContent = poolHash.toFixed(1);
+                        chartContent.appendChild(poolLabel);
+                    }
+
+                    // Miner label below X-axis
                     const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    label.setAttribute('x', x + barWidth + 2);
-                    label.setAttribute('y', height - padding.bottom + 20);
+                    label.setAttribute('x', x + barWidth + 4);
+                    label.setAttribute('y', height - padding.bottom + 25);
                     label.setAttribute('text-anchor', 'middle');
                     label.setAttribute('fill', '#888');
-                    label.setAttribute('font-size', '12');
+                    label.setAttribute('font-size', '13');
+                    label.setAttribute('font-weight', 'bold');
                     label.textContent = miner;
-                    svg.appendChild(label);
+                    chartContent.appendChild(label);
                 });
 
-                // Legend
-                const legend = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                
-                // Local Legend
-                const lRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                lRect.setAttribute('x', width - 200);
-                lRect.setAttribute('y', 20);
-                lRect.setAttribute('width', 12);
-                lRect.setAttribute('height', 12);
-                lRect.setAttribute('fill', '#06b6d4');
-                legend.appendChild(lRect);
-                
-                const lText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                lText.setAttribute('x', width - 180);
-                lText.setAttribute('y', 30);
-                lText.setAttribute('fill', '#ccc');
-                lText.setAttribute('font-size', '12');
-                lText.textContent = 'Local Hashrate';
-                legend.appendChild(lText);
+                // Status indicator
+                if (!hasPoolData) {
+                    const statusRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    statusRect.setAttribute('x', width - 280);
+                    statusRect.setAttribute('y', 15);
+                    statusRect.setAttribute('width', 265);
+                    statusRect.setAttribute('height', 25);
+                    statusRect.setAttribute('fill', 'rgba(239, 68, 68, 0.1)');
+                    statusRect.setAttribute('stroke', '#ef4444');
+                    statusRect.setAttribute('stroke-width', '1.5');
+                    statusRect.setAttribute('rx', '4');
+                    chartContent.appendChild(statusRect);
 
-                // Pool Legend
-                const pRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                pRect.setAttribute('x', width - 90);
-                pRect.setAttribute('y', 20);
-                pRect.setAttribute('width', 12);
-                pRect.setAttribute('height', 12);
-                pRect.setAttribute('fill', '#f59e0b');
-                legend.appendChild(pRect);
-                
-                const pText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                pText.setAttribute('x', width - 70);
-                pText.setAttribute('y', 30);
-                pText.setAttribute('fill', '#ccc');
-                pText.setAttribute('font-size', '12');
-                pText.textContent = 'Pool Hashrate';
-                legend.appendChild(pText);
+                    const statusText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    statusText.setAttribute('x', width - 280 + 8);
+                    statusText.setAttribute('y', 33);
+                    statusText.setAttribute('fill', '#ef4444');
+                    statusText.setAttribute('font-size', '11');
+                    statusText.setAttribute('font-weight', 'bold');
+                    statusText.textContent = '⚠️ Luxor data unavailable - Local data only';
+                    chartContent.appendChild(statusText);
+                }
+            },
 
-                svg.appendChild(legend);
+            updatePoolComparisonStats() {
+                // Calculate totals
+                let localTotal = 0;
+                let poolTotal = 0;
+                let matchedMiners = 0;
+
+                Object.keys(this.data).forEach(miner => {
+                    localTotal += this.data[miner]?.hashrate_1m || 0;
+                    if (this.poolData && this.poolData[miner]) {
+                        poolTotal += this.poolData[miner].hashrate || 0;
+                        matchedMiners++;
+                    }
+                });
+
+                // Update stat cards
+                const localCard = document.getElementById('localHashrateTotal');
+                const poolCard = document.getElementById('poolHashrateTotal');
+                const diffCard = document.getElementById('hashrateDifference');
+                const varCard = document.getElementById('hashrateVariance');
+                const statusCard = document.getElementById('poolStatus');
+
+                if (localCard) localCard.textContent = localTotal.toFixed(2) + ' TH/s';
+                if (poolCard) poolCard.textContent = poolTotal.toFixed(2) + ' TH/s';
+                
+                const difference = Math.abs(localTotal - poolTotal);
+                const variance = localTotal > 0 ? ((difference / localTotal) * 100) : 0;
+                
+                if (diffCard) diffCard.textContent = difference.toFixed(2) + ' TH/s';
+                if (varCard) varCard.textContent = variance.toFixed(1) + '%';
+                
+                if (statusCard) {
+                    if (poolTotal > 0) {
+                        statusCard.style.color = '#10b981';
+                        statusCard.textContent = '✓ Pool data active - ' + matchedMiners + ' miners matched';
+                    } else {
+                        statusCard.style.color = '#f59e0b';
+                        statusCard.textContent = '⚠️ Awaiting Luxor API response...';
+                    }
+                }
             },
 
             getMinerData(name) {
