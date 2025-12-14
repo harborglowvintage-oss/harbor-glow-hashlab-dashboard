@@ -1288,23 +1288,48 @@ async def pool_comparison_data(request: Request):
     # Fetch pool data
     pool_data_raw = await get_luxor_data()
     
+    # Load miner-to-worker mapping
+    worker_mapping = {}
+    mapping_file = Path("pool_worker_mapping.json")
+    if mapping_file.exists():
+        try:
+            with open(mapping_file, 'r') as f:
+                worker_mapping = json.load(f)
+                logger.debug("Loaded pool worker mapping: %s", list(worker_mapping.keys()))
+        except Exception as e:
+            logger.warning("Failed to load pool worker mapping: %s", e)
+    
+    # Create reverse mapping: pool_worker_name -> local_miner_key
+    reverse_mapping = {v: k for k, v in worker_mapping.items()}
+    
     # Process pool data (REST API v2 format)
+    # Key by local miner name for easy matching in frontend
     pool_miners = {}
     if pool_data_raw:
         for worker in pool_data_raw:
-            # REST API v2 returns workers directly (not wrapped in edges/nodes)
-            worker_name = worker.get("name") or worker.get("workerName", "Unknown")
+            # Get pool worker name from response
+            pool_worker_name = worker.get("name") or worker.get("workerName", "Unknown")
             
-            # Normalize worker name if needed (e.g., user.worker -> worker)
-            if "." in worker_name:
-                worker_name = worker_name.split(".")[-1]
-            
-            pool_miners[worker_name] = {
-                "hashrate": worker.get("hashrate", 0),
-                "efficiency": worker.get("efficiency", 0),
-                "status": worker.get("status", "unknown"),
-                "updatedAt": worker.get("updatedAt") or worker.get("updated_at")
-            }
+            # Look up corresponding local miner key using reverse mapping
+            if pool_worker_name in reverse_mapping:
+                local_miner_key = reverse_mapping[pool_worker_name]
+                pool_miners[local_miner_key] = {
+                    "hashrate": worker.get("hashrate", 0),
+                    "efficiency": worker.get("efficiency", 0),
+                    "status": worker.get("status", "unknown"),
+                    "updatedAt": worker.get("updatedAt") or worker.get("updated_at"),
+                    "pool_name": pool_worker_name
+                }
+            else:
+                # Fallback: use pool worker name as key if no mapping exists
+                logger.debug("No mapping for pool worker '%s', using as-is", pool_worker_name)
+                pool_miners[pool_worker_name] = {
+                    "hashrate": worker.get("hashrate", 0),
+                    "efficiency": worker.get("efficiency", 0),
+                    "status": worker.get("status", "unknown"),
+                    "updatedAt": worker.get("updatedAt") or worker.get("updated_at"),
+                    "pool_name": pool_worker_name
+                }
             
     return {
         "local": local_data,
