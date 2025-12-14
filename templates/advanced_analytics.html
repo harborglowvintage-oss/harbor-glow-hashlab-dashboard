@@ -532,9 +532,18 @@
             </div>
         </div>
 
+        <!-- Miner Performance Analysis -->
+        <div class="info-box">
+            <div class="info-title">🔬 AI Miner Performance Analysis (24h)</div>
+            <div id="minerAnalysis" class="loading">
+                <div class="spinner"></div>
+                Analyzing miner performance...
+            </div>
+        </div>
+
         <!-- Recommendations -->
         <div class="info-box">
-            <div class="info-title">Recommendations</div>
+            <div class="info-title">⚡ Fleet Recommendations</div>
             <div id="recommendations" class="loading">
                 <div class="spinner"></div>
                 Generating recommendations...
@@ -603,6 +612,7 @@
                 this.renderCharts();
                 this.renderPoolComparisonChart();
                 this.renderSystemOverview();
+                this.renderMinerAnalysis();
                 this.renderRecommendations();
             },
 
@@ -1384,11 +1394,84 @@
                 `).join('');
 
                 container.innerHTML = html || '<div class="recommendation-item">No data available</div>';
+            },
+
+            renderMinerAnalysis() {
+                const container = document.getElementById('minerAnalysis');
+                if (!this.data) return;
+
+                const miners = Object.values(this.data).filter(m => m.alive);
+                let analysisHtml = '';
+
+                miners.forEach(miner => {
+                    const insights = this.generateMinerInsights(miner);
+                    
+                    analysisHtml += `
+                        <div style="margin-bottom: 20px; padding: 16px; background: rgba(6, 182, 212, 0.05); border-left: 3px solid #06b6d4; border-radius: 6px;">
+                            <div style="font-weight: 700; color: #06b6d4; margin-bottom: 12px; font-size: 14px;">Miner ${miner.name}</div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                ${insights.map((insight, idx) => `
+                                    <div style="color: #aaa; font-size: 13px; line-height: 1.5; display: flex; gap: 8px;">
+                                        <span style="color: #10b981; font-weight: 600; min-width: 20px;">${idx + 1}.</span>
+                                        <span>${insight}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = analysisHtml || '<div class="recommendation-item">No miners to analyze</div>';
+            },
+
+            generateMinerInsights(miner) {
+                const insights = [];
+                const hash = miner.hashrate_1m || 0;
+                const eff = miner.efficiency || 0;
+                const temp = miner.temp || 0;
+                const power = miner.power || 0;
+                const acceptance = (miner.sharesAccepted || 0) / ((miner.sharesAccepted || 0) + (miner.sharesRejected || 0) || 1);
+
+                // Insight 1: Hashrate Performance
+                if (hash > 8.5) {
+                    insights.push(`✅ Excellent hashrate at ${hash.toFixed(2)} TH/s - performing above fleet average`);
+                } else if (hash > 7.5) {
+                    insights.push(`⚡ Good hashrate at ${hash.toFixed(2)} TH/s - stable and consistent performance`);
+                } else if (hash > 6.5) {
+                    insights.push(`⚠️ Moderate hashrate at ${hash.toFixed(2)} TH/s - within acceptable range but monitor for drift`);
+                } else {
+                    insights.push(`🔴 Low hashrate at ${hash.toFixed(2)} TH/s - investigate for hardware issues or throttling`);
+                }
+
+                // Insight 2: Efficiency
+                if (eff < 25) {
+                    insights.push(`💪 Excellent efficiency at ${eff.toFixed(1)} W/TH - optimal power utilization, highly profitable`);
+                } else if (eff < 35) {
+                    insights.push(`✅ Good efficiency at ${eff.toFixed(1)} W/TH - balanced power-to-hash ratio, performing well`);
+                } else if (eff < 45) {
+                    insights.push(`⚠️ Fair efficiency at ${eff.toFixed(1)} W/TH - acceptable but room for tuning and optimization`);
+                } else {
+                    insights.push(`🔧 Poor efficiency at ${eff.toFixed(1)} W/TH - high power draw, consider BIOS tuning or kernel adjustment`);
+                }
+
+                // Insight 3: Thermal & Share Health
+                if (temp > 70) {
+                    insights.push(`🌡️ Running hot at ${temp.toFixed(0)}°C - improve airflow or increase fan speed to extend hardware lifespan`);
+                } else if (temp > 60) {
+                    insights.push(`🟡 Moderate temperature at ${temp.toFixed(0)}°C - acceptable but monitor for thermal creep during sustained loads`);
+                } else {
+                    insights.push(`❄️ Excellent thermal management at ${temp.toFixed(0)}°C - cool operation with strong share acceptance (${(acceptance * 100).toFixed(1)}%)`);
+                }
+
+                return insights;
             }
         };
 
-        // Initialize when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => app.init());
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+            // Render miner analysis after initial data load
+            setTimeout(() => app.renderMinerAnalysis(), 500);
+        });
     </script>
 </body>
 </html>
