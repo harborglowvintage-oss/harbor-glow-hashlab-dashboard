@@ -11,6 +11,59 @@ LUXOR_BASE_URL = "https://app.luxor.tech/api/v2"
 LUXOR_DEFAULT_SUBACCOUNT = "harborglowvintage"
 
 
+async def debug_luxor_connection():
+    """Debug function to verify Luxor API connection and configuration."""
+    api_key = os.getenv("LUXOR_API_KEY")
+    subaccount = os.getenv("LUXOR_SUBACCOUNT") or LUXOR_DEFAULT_SUBACCOUNT
+    
+    config = {
+        "api_key_set": bool(api_key),
+        "api_key_preview": f"{api_key[:10]}...{api_key[-5:]}" if api_key else "NOT SET",
+        "subaccount": subaccount,
+        "base_url": LUXOR_BASE_URL,
+        "endpoint": f"{LUXOR_BASE_URL}/pool/workers/BTC",
+    }
+    
+    # Test the connection
+    if not api_key:
+        config["connection_status"] = "FAILED: API key not set"
+        return config
+    
+    headers = {
+        "x-lux-api-key": api_key,
+        "Content-Type": "application/json",
+    }
+    
+    params = {
+        "subaccount_names": subaccount,
+        "status": "active",
+        "limit": 10,  # Small limit for debug
+    }
+    
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            url = f"{LUXOR_BASE_URL}/pool/workers/BTC"
+            response = await client.get(url, headers=headers, params=params)
+        
+        config["connection_status"] = f"SUCCESS: HTTP {response.status_code}"
+        config["response_length"] = len(response.text)
+        config["response_preview"] = response.text[:200]
+        
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                config["json_valid"] = True
+                config["json_structure"] = list(data.keys()) if isinstance(data, dict) else "list"
+            except Exception as e:
+                config["json_valid"] = False
+                config["json_error"] = str(e)
+        
+        return config
+    except Exception as e:
+        config["connection_status"] = f"FAILED: {str(e)}"
+        return config
+
+
 async def get_luxor_data(api_key: str | None = None, subaccount: str | None = None):
     """
     Fetch worker data from the Luxor pool REST API v2 so the dashboard can
@@ -30,8 +83,9 @@ async def get_luxor_data(api_key: str | None = None, subaccount: str | None = No
         logger.warning("LUXOR_SUBACCOUNT not configured.")
         return None
 
+    # Use x-lux-api-key header (not Bearer token)
     headers = {
-        "Authorization": f"Bearer {api_key}",
+        "x-lux-api-key": api_key,
         "Content-Type": "application/json",
     }
     

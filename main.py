@@ -800,6 +800,26 @@ async def logout(request: Request):
     request.session.clear()
     return RedirectResponse("/login", status_code=302)
 
+
+@app.get("/debug/luxor")
+async def debug_luxor(request: Request):
+    """Debug endpoint to test Luxor API connection and response format."""
+    if not is_authenticated(request):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    
+    from luxor_api import debug_luxor_connection, get_luxor_data
+    
+    config = await debug_luxor_connection()
+    data = await get_luxor_data()
+    
+    return {
+        "config": config,
+        "data_returned": data is not None,
+        "data_count": len(data) if data else 0,
+        "sample": data[:2] if data else None,
+        "raw_type": type(data).__name__ if data else None
+    }
+
 @app.get("/")
 async def dashboard(request: Request):
     if not is_authenticated(request):
