@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Optional, List, Dict
 
 import httpx
 
@@ -11,7 +12,7 @@ LUXOR_BASE_URL = "https://app.luxor.tech/api/v2"
 LUXOR_DEFAULT_SUBACCOUNT = "harborglowvintage"
 
 
-async def debug_luxor_connection():
+async def debug_luxor_connection() -> Dict:
     """Debug function to verify Luxor API connection and configuration."""
     api_key = os.getenv("LUXOR_API_KEY")
     subaccount = os.getenv("LUXOR_SUBACCOUNT") or LUXOR_DEFAULT_SUBACCOUNT
@@ -51,7 +52,7 @@ async def debug_luxor_connection():
         
         if response.status_code == 200:
             try:
-                data = response.json()
+                data = await response.json()
                 config["json_valid"] = True
                 config["json_structure"] = list(data.keys()) if isinstance(data, dict) else "list"
             except Exception as e:
@@ -64,7 +65,7 @@ async def debug_luxor_connection():
         return config
 
 
-async def get_luxor_data(api_key: str | None = None, subaccount: str | None = None):
+async def get_luxor_data(api_key: str | None = None, subaccount: str | None = None) -> Optional[List[Dict]]:
     """
     Fetch worker data from the Luxor pool REST API v2 so the dashboard can
     compare local miner metrics to pool-side statistics.
@@ -102,9 +103,9 @@ async def get_luxor_data(api_key: str | None = None, subaccount: str | None = No
             response = await client.get(url, headers=headers, params=params)
 
         response.raise_for_status()
-        data = response.json()
+        data = await response.json()
 
-        logger.debug("Luxor API response: %s", data)
+        logger.debug("Luxor API response received: %s", data)
         
         # Transform Luxor API response format to match expected structure
         # The API returns a list of workers or paginated results
@@ -112,7 +113,11 @@ async def get_luxor_data(api_key: str | None = None, subaccount: str | None = No
         if not isinstance(workers, list):
             workers = [workers] if workers else []
 
-        logger.debug("Luxor API returned %d workers", len(workers))
+        # Calculate aggregate hashrate for logging
+        total_hashrate = sum(w.get("hashrate", 0) for w in workers)
+        total_hashrate_ths = total_hashrate / 1e12 if total_hashrate > 0 else 0
+        
+        logger.debug("Luxor API returned %d workers with total hashrate: %.2f TH/s", len(workers), total_hashrate_ths)
         return workers
 
     except httpx.HTTPStatusError as exc:
