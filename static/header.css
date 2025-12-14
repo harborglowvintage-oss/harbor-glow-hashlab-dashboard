@@ -73,22 +73,7 @@
 
 /* If a photorealistic shell texture is available at /static/img/logo-shell.png,
    the `.has-shell` class will enable it and blend it under the inner plate. */
-.header-logo-frame.shell.has-shell {
-  background-image: url('/static/img/logo-shell.png');
-  background-size: cover;
-  background-position: center;
-}
-.header-logo-frame.shell.has-shell::before {
-  /* slightly darken inner plate so texture shows through */
-  background: linear-gradient(180deg, rgba(10,18,20,0.92), rgba(6,12,14,0.92));
-}
-.header-logo-frame.shell.has-shell .metal-grain {
-  mix-blend-mode: multiply;
-  opacity: 0.45;
-}
-.header-logo-frame.shell.has-shell .metal-highlight {
-  opacity: 0.75;
-}
+/* REMOVED logo-shell logic */
 
 /* Brushed metal grain overlay */
 .header-logo-frame .metal-grain {

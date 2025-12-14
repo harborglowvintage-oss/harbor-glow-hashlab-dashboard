@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Mining Analytics</title>
+    <link rel="icon" type="image/png" href="/static/img/bolt.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Space Mono', 'Fira Code', 'Courier New', monospace;
+            height: 100%;
+        }
+
+        body {
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            margin-bottom: 32px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #06b6d4, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .miner-selector {
+            display: flex;
+            gap: 12px;
+            margin: 24px 0;
+            flex-wrap: wrap;
+        }
+
+        .miner-btn {
+            padding: 10px 16px;
+            border: 1px solid #333;
+            background-color: #111;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .miner-btn:hover {
+            border-color: #06b6d4;
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .miner-btn.active {
+            background-color: #06b6d4;
+            color: #000;
+            border-color: #06b6d4;
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.4);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background-color: rgba(17, 24, 39, 0.6);
+            border: 1px solid #1f2937;
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-card:hover {
+            border-color: #06b6d4;
+            background-color: rgba(17, 24, 39, 0.9);
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .stat-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #06b6d4;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            color: #10b981;
+            font-weight: 500;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .chart-container {
+            background-color: rgba(17, 24, 39, 0.6);
+            border: 1px solid #1f2937;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .chart-container:hover {
+            border-color: #06b6d4;
+            background-color: rgba(17, 24, 39, 0.9);
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #06b6d4;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #1f2937;
+            font-size: 13px;
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #888;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            color: #06b6d4;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .info-box {
+            background-color: rgba(17, 24, 39, 0.6);
+            border: 1px solid #1f2937;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .info-box:hover {
+            border-color: #06b6d4;
+            background-color: rgba(17, 24, 39, 0.9);
+        }
+
+        .info-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #06b6d4;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-text {
+            font-size: 13px;
+            color: #aaa;
+            line-height: 1.6;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            color: #06b6d4;
+            font-size: 13px;
+        }
+
+        .spinner {
+            border: 2px solid #1f2937;
+            border-top: 2px solid #06b6d4;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #f87171;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .recommendation-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #1f2937;
+            font-size: 13px;
+            color: #aaa;
+            line-height: 1.5;
+        }
+
+        .recommendation-item:last-child {
+            border-bottom: none;
+        }
+
+        svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .chart-bar {
+            fill: url(#barGradient);
+            transition: opacity 0.2s ease;
+        }
+
+        .chart-bar:hover {
+            opacity: 0.8;
+        }
+
+        .chart-label {
+            font-size: 11px;
+            fill: #888;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .chart-value {
+            font-size: 12px;
+            fill: #06b6d4;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        .chart-grid {
+            stroke: #1f2937;
+            stroke-width: 1;
+            opacity: 0.3;
+        }
+
+        .gauge-circle {
+            fill: none;
+            stroke: #1f2937;
+            stroke-width: 3;
+        }
+
+        .gauge-progress {
+            fill: none;
+            stroke: url(#gaugeGradient);
+            stroke-width: 3;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .gauge-text {
+            font-size: 16px;
+            font-weight: 700;
+            text-anchor: middle;
+            fill: #06b6d4;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .gauge-label {
+            font-size: 11px;
+            text-anchor: middle;
+            fill: #888;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .line-chart-path {
+            fill: none;
+            stroke: url(#lineGradient);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .line-chart-area {
+            fill: url(#areaGradient);
+            opacity: 0.1;
+        }
+
+        .chart-dot {
+            fill: #06b6d4;
+            r: 3;
+        }
+
+        .chart-dot:hover {
+            r: 5;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="title">⚡ Advanced Mining Analytics</div>
+            <div class="subtitle">Real-time fleet performance monitoring and insights</div>
+        </div>
+
+        <!-- Miner Selector -->
+        <div class="miner-selector" id="minerSelector"></div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Hashrate Distribution</div>
+                <div class="chart-content">
+                    <svg id="hashrateChart" viewBox="0 0 100 60" style="width: 100%; height: 200px;">
+                        <defs>
+                            <linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#10b981;stop-opacity:0.6" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Temperature Status</div>
+                <div class="chart-content">
+                    <svg id="tempGauges" viewBox="0 0 200 100" style="width: 100%; height: 200px;">
+                        <defs>
+                            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Power Efficiency Trend</div>
+                <div class="chart-content">
+                    <svg id="efficiencyChart" viewBox="0 0 300 150" style="width: 100%; height: 220px;">
+                        <defs>
+                            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:0" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Fleet Status Overview</div>
+                <div class="chart-content">
+                    <svg id="statusChart" viewBox="0 0 200 140" style="width: 100%; height: 220px;">
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pool Comparison Chart (Oversized) -->
+        <div class="chart-container" style="margin-top: 24px; min-height: 400px;">
+            <div class="chart-title">Pool vs Local Hashrate Comparison (Luxor)</div>
+            <div class="chart-content">
+                <svg id="poolComparisonChart" viewBox="0 0 800 300" style="width: 100%; height: 350px;">
+                    <defs>
+                        <linearGradient id="localGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:0.8" />
+                            <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:0.2" />
+                        </linearGradient>
+                        <linearGradient id="poolGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0.8" />
+                            <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:0.2" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Detailed Info -->
+        <div class="info-box">
+            <div class="info-title">System Overview</div>
+            <div id="systemOverview" class="loading">
+                <div class="spinner"></div>
+                Loading system overview...
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="info-box">
+            <div class="info-title">Recommendations</div>
+            <div id="recommendations" class="loading">
+                <div class="spinner"></div>
+                Generating recommendations...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            miners: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H-nerd'],
+            selectedMiner: 'A',
+            data: null,
+            refreshInterval: 10000,
+
+            init() {
+                this.renderMinerSelector();
+                this.loadData();
+                setInterval(() => this.loadData(), this.refreshInterval);
+            },
+
+            renderMinerSelector() {
+                const selector = document.getElementById('minerSelector');
+                selector.innerHTML = this.miners.map(miner => `
+                    <button class="miner-btn ${miner === this.selectedMiner ? 'active' : ''}" 
+                            onclick="app.selectMiner('${miner}')" 
+                            data-miner="${miner}">
+                        Miner ${miner}
+                    </button>
+                `).join('');
+            },
+
+            selectMiner(name) {
+                this.selectedMiner = name;
+                this.renderMinerSelector();
+                this.updateUI();
+            },
+
+            async loadData() {
+                try {
+                    const response = await fetch('/api/pool-comparison');
+                    if (!response.ok) {
+                        if (response.status === 302 || response.status === 401) {
+                            window.location.href = '/login';
+                            return;
+                        }
+                        // Fallback to old endpoint if new one fails
+                        const fallback = await fetch('/miner-data');
+                        if (fallback.ok) {
+                            this.data = await fallback.json();
+                            this.poolData = {};
+                            this.updateUI();
+                            return;
+                        }
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const json = await response.json();
+                    this.data = json.local;
+                    this.poolData = json.pool;
+                    this.updateUI();
+                } catch (error) {
+                    console.error('Failed to load data:', error);
+                    const errorHtml = `<div class="error">⚠️ Error loading data: ${error.message}</div>`;
+                    document.getElementById('statsGrid').innerHTML = errorHtml;
+                }
+            },
+
+            updateUI() {
+                this.renderStats();
+                this.renderCharts();
+                this.renderPoolComparisonChart();
+                this.renderSystemOverview();
+                this.renderRecommendations();
+            },
+
+            renderCharts() {
+                this.renderHashrateChart();
+                this.renderTempGauges();
+                this.renderEfficiencyChart();
+                this.renderStatusChart();
+            },
+
+            renderHashrateChart() {
+                if (!this.data) return;
+                const svg = document.getElementById('hashrateChart');
+                svg.innerHTML = '<defs><linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" /><stop offset="100%" style="stop-color:#10b981;stop-opacity:0.6" /></linearGradient></defs>';
+                
+                const miners = Object.entries(this.data).slice(0, 8);
+                const maxHash = Math.max(...miners.map(([_, m]) => m.hashrate_1m || 0), 1);
+                const barWidth = 100 / miners.length;
+                const chartHeight = 50;
+
+                miners.forEach(([name, miner], i) => {
+                    const hash = miner.hashrate_1m || 0;
+                    const height = (hash / maxHash) * (chartHeight - 5);
+                    const x = i * barWidth + barWidth * 0.1;
+                    const y = chartHeight - height;
+
+                    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    
+                    // Bar
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('class', 'chart-bar');
+                    rect.setAttribute('x', x);
+                    rect.setAttribute('y', y);
+                    rect.setAttribute('width', barWidth * 0.8);
+                    rect.setAttribute('height', height);
+                    g.appendChild(rect);
+
+                    // Label
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('class', 'chart-label');
+                    label.setAttribute('x', x + barWidth * 0.4);
+                    label.setAttribute('y', chartHeight + 2);
+                    label.setAttribute('text-anchor', 'middle');
+                    label.textContent = name;
+                    g.appendChild(label);
+
+                    // Value
+                    const value = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    value.setAttribute('class', 'chart-value');
+                    value.setAttribute('x', x + barWidth * 0.4);
+                    value.setAttribute('y', y - 1);
+                    value.setAttribute('text-anchor', 'middle');
+                    value.textContent = hash.toFixed(1);
+                    g.appendChild(value);
+
+                    svg.appendChild(g);
+                });
+            },
+
+            renderTempGauges() {
+                if (!this.data) return;
+                const svg = document.getElementById('tempGauges');
+                svg.innerHTML = '<defs><linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" /><stop offset="100%" style="stop-color:#10b981;stop-opacity:1" /></linearGradient></defs>';
+                
+                const miners = Object.values(this.data).slice(0, 4);
+                const gaugeRadius = 18;
+                const circumference = 2 * Math.PI * gaugeRadius;
+                const tempThreshold = 80;
+
+                miners.forEach((miner, i) => {
+                    const cx = 50 + (i % 2) * 100;
+                    const cy = 35 + Math.floor(i / 2) * 60;
+                    const temp = miner.temp || 0;
+                    const progress = Math.min(temp / tempThreshold, 1);
+                    const offset = circumference * (1 - progress);
+
+                    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+                    // Background circle
+                    const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    bgCircle.setAttribute('class', 'gauge-circle');
+                    bgCircle.setAttribute('cx', cx);
+                    bgCircle.setAttribute('cy', cy);
+                    bgCircle.setAttribute('r', gaugeRadius);
+                    g.appendChild(bgCircle);
+
+                    // Progress circle
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('class', 'gauge-progress');
+                    circle.setAttribute('cx', cx);
+                    circle.setAttribute('cy', cy);
+                    circle.setAttribute('r', gaugeRadius);
+                    circle.setAttribute('stroke-dasharray', circumference);
+                    circle.setAttribute('stroke-dashoffset', offset);
+                    circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+                    g.appendChild(circle);
+
+                    // Temperature text
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('class', 'gauge-text');
+                    text.setAttribute('x', cx);
+                    text.setAttribute('y', cy + 3);
+                    text.textContent = temp.toFixed(0) + '°';
+                    g.appendChild(text);
+
+                    // Miner name
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('class', 'gauge-label');
+                    label.setAttribute('x', cx);
+                    label.setAttribute('y', cy + 28);
+                    label.textContent = miner.name || '?';
+                    g.appendChild(label);
+
+                    svg.appendChild(g);
+                });
+            },
+
+            renderEfficiencyChart() {
+                if (!this.data) return;
+                const svg = document.getElementById('efficiencyChart');
+                
+                const miners = Object.values(this.data).slice(0, 8);
+                const efficiencies = miners.map(m => m.efficiency || 40);
+                const maxEff = Math.max(...efficiencies, 50);
+                const minEff = Math.min(...efficiencies, 30);
+                const range = maxEff - minEff || 1;
+
+                const padding = 20;
+                const width = 300 - 2 * padding;
+                const height = 150 - 2 * padding;
+
+                let pathData = `M ${padding}`;
+                const points = [];
+
+                efficiencies.forEach((eff, i) => {
+                    const x = padding + (i / (efficiencies.length - 1 || 1)) * width;
+                    const y = padding + height - ((eff - minEff) / range) * height;
+                    points.push({x, y, value: eff});
+                    if (i === 0) {
+                        pathData = `M ${x} ${y}`;
+                    } else {
+                        pathData += ` L ${x} ${y}`;
+                    }
+                });
+
+                // Add grid lines
+                for (let i = 0; i <= 4; i++) {
+                    const y = padding + (i / 4) * height;
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('class', 'chart-grid');
+                    line.setAttribute('x1', padding);
+                    line.setAttribute('x2', 300 - padding);
+                    line.setAttribute('y1', y);
+                    line.setAttribute('y2', y);
+                    svg.appendChild(line);
+                }
+
+                // Area under curve
+                const area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                area.setAttribute('class', 'line-chart-area');
+                area.setAttribute('d', `${pathData} L ${300 - padding} ${padding + height} L ${padding} ${padding + height} Z`);
+                svg.appendChild(area);
+
+                // Line
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('class', 'line-chart-path');
+                path.setAttribute('d', pathData);
+                svg.appendChild(path);
+
+                // Data points
+                points.forEach((point, i) => {
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('class', 'chart-dot');
+                    circle.setAttribute('cx', point.x);
+                    circle.setAttribute('cy', point.y);
+                    svg.appendChild(circle);
+
+                    // Value label
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('class', 'chart-value');
+                    text.setAttribute('x', point.x);
+                    text.setAttribute('y', point.y - 8);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('font-size', '10');
+                    text.textContent = point.value.toFixed(1);
+                    svg.appendChild(text);
+                });
+            },
+
+            renderStatusChart() {
+                if (!this.data) return;
+                const svg = document.getElementById('statusChart');
+                svg.innerHTML = '';
+
+                const miners = Object.values(this.data);
+                const online = miners.filter(m => m.alive).length;
+                const offline = miners.length - online;
+                const total = miners.length;
+
+                // Donut chart for online/offline
+                const radius = 35;
+                const cx = 60;
+                const cy = 50;
+                const circumference = 2 * Math.PI * radius;
+
+                // Offline segment
+                const offlineAngle = (offline / total) * circumference;
+                const circle1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle1.setAttribute('cx', cx);
+                circle1.setAttribute('cy', cy);
+                circle1.setAttribute('r', radius);
+                circle1.setAttribute('fill', 'none');
+                circle1.setAttribute('stroke', '#ef4444');
+                circle1.setAttribute('stroke-width', '8');
+                circle1.setAttribute('stroke-dasharray', `${offlineAngle} ${circumference}`);
+                circle1.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+                svg.appendChild(circle1);
+
+                // Online segment
+                const onlineAngle = (online / total) * circumference;
+                const circle2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle2.setAttribute('cx', cx);
+                circle2.setAttribute('cy', cy);
+                circle2.setAttribute('r', radius);
+                circle2.setAttribute('fill', 'none');
+                circle2.setAttribute('stroke', '#10b981');
+                circle2.setAttribute('stroke-width', '8');
+                circle2.setAttribute('stroke-dasharray', `${onlineAngle} ${circumference}`);
+                circle2.setAttribute('stroke-dashoffset', -offlineAngle);
+                circle2.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+                svg.appendChild(circle2);
+
+                // Center text
+                const text1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text1.setAttribute('x', cx);
+                text1.setAttribute('y', cy - 5);
+                text1.setAttribute('text-anchor', 'middle');
+                text1.setAttribute('class', 'gauge-text');
+                text1.setAttribute('font-size', '24');
+                text1.textContent = online;
+                svg.appendChild(text1);
+
+                const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text2.setAttribute('x', cx);
+                text2.setAttribute('y', cy + 12);
+                text2.setAttribute('text-anchor', 'middle');
+                text2.setAttribute('class', 'gauge-label');
+                text2.setAttribute('font-size', '12');
+                text2.textContent = 'Online';
+                svg.appendChild(text2);
+
+                // Legend
+                const legend1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                legend1.setAttribute('x', 115);
+                legend1.setAttribute('y', 30);
+                legend1.setAttribute('width', 10);
+                legend1.setAttribute('height', 10);
+                legend1.setAttribute('fill', '#10b981');
+                svg.appendChild(legend1);
+
+                const label1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label1.setAttribute('x', 130);
+                label1.setAttribute('y', 39);
+                label1.setAttribute('class', 'chart-value');
+                label1.setAttribute('font-size', '12');
+                label1.textContent = `Online: ${online}`;
+                svg.appendChild(label1);
+
+                const legend2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                legend2.setAttribute('x', 115);
+                legend2.setAttribute('y', 50);
+                legend2.setAttribute('width', 10);
+                legend2.setAttribute('height', 10);
+                legend2.setAttribute('fill', '#ef4444');
+                svg.appendChild(legend2);
+
+                const label2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label2.setAttribute('x', 130);
+                label2.setAttribute('y', 59);
+                label2.setAttribute('class', 'chart-value');
+                label2.setAttribute('font-size', '12');
+                label2.textContent = `Offline: ${offline}`;
+                svg.appendChild(label2);
+
+                const label3 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label3.setAttribute('x', 130);
+                label3.setAttribute('y', 79);
+                label3.setAttribute('class', 'gauge-label');
+                label3.setAttribute('font-size', '11');
+                label3.textContent = `Uptime: ${((online/total)*100).toFixed(1)}%`;
+                svg.appendChild(label3);
+            },
+
+            renderPoolComparisonChart() {
+                if (!this.data) return;
+                const svg = document.getElementById('poolComparisonChart');
+                // Clear previous content but keep defs
+                const defs = svg.querySelector('defs');
+                svg.innerHTML = '';
+                if (defs) svg.appendChild(defs);
+
+                // Check if pool data exists
+                const hasPoolData = this.poolData && Object.keys(this.poolData).length > 0;
+                if (!hasPoolData) {
+                     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                     text.setAttribute('x', 400);
+                     text.setAttribute('y', 150);
+                     text.setAttribute('text-anchor', 'middle');
+                     text.setAttribute('fill', '#ef4444');
+                     text.setAttribute('font-size', '14');
+                     text.textContent = '⚠️ Pool data unavailable - Showing local stats only';
+                     svg.appendChild(text);
+                }
+
+                const miners = Object.keys(this.data).sort();
+                const width = 800;
+                const height = 300;
+                const padding = { top: 40, right: 40, bottom: 40, left: 60 };
+                const chartWidth = width - padding.left - padding.right;
+                const chartHeight = height - padding.top - padding.bottom;
+
+                // Calculate max hashrate for scaling
+                let maxHash = 0;
+                miners.forEach(m => {
+                    const local = this.data[m]?.hashrate_1m || 0;
+                    const pool = (this.poolData && this.poolData[m]?.hashrate) || 0;
+                    maxHash = Math.max(maxHash, local, pool);
+                });
+                maxHash = Math.max(maxHash, 10); // Minimum scale
+
+                const barWidth = (chartWidth / miners.length) * 0.3;
+                const groupWidth = chartWidth / miners.length;
+
+                // Draw axes
+                const axisGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
+                // Y Axis
+                const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                yAxis.setAttribute('x1', padding.left);
+                yAxis.setAttribute('y1', padding.top);
+                yAxis.setAttribute('x2', padding.left);
+                yAxis.setAttribute('y2', height - padding.bottom);
+                yAxis.setAttribute('stroke', '#333');
+                axisGroup.appendChild(yAxis);
+
+                // X Axis
+                const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                xAxis.setAttribute('x1', padding.left);
+                xAxis.setAttribute('y1', height - padding.bottom);
+                xAxis.setAttribute('x2', width - padding.right);
+                xAxis.setAttribute('y2', height - padding.bottom);
+                xAxis.setAttribute('stroke', '#333');
+                axisGroup.appendChild(xAxis);
+
+                // Grid lines
+                for (let i = 0; i <= 5; i++) {
+                    const y = height - padding.bottom - (i * chartHeight / 5);
+                    const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    gridLine.setAttribute('x1', padding.left);
+                    gridLine.setAttribute('y1', y);
+                    gridLine.setAttribute('x2', width - padding.right);
+                    gridLine.setAttribute('y2', y);
+                    gridLine.setAttribute('stroke', '#222');
+                    gridLine.setAttribute('stroke-dasharray', '4 4');
+                    axisGroup.appendChild(gridLine);
+
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', padding.left - 10);
+                    label.setAttribute('y', y + 4);
+                    label.setAttribute('text-anchor', 'end');
+                    label.setAttribute('fill', '#666');
+                    label.setAttribute('font-size', '12');
+                    label.textContent = Math.round(maxHash * i / 5);
+                    axisGroup.appendChild(label);
+                }
+
+                svg.appendChild(axisGroup);
+
+                // Draw bars
+                miners.forEach((miner, i) => {
+                    const localHash = this.data[miner]?.hashrate_1m || 0;
+                    const poolHash = (this.poolData && this.poolData[miner]?.hashrate) || 0;
+                    
+                    const x = padding.left + (i * groupWidth) + (groupWidth - barWidth * 2) / 2;
+                    
+                    // Local Bar
+                    const localHeight = (localHash / maxHash) * chartHeight;
+                    const localBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    localBar.setAttribute('x', x);
+                    localBar.setAttribute('y', height - padding.bottom - localHeight);
+                    localBar.setAttribute('width', barWidth);
+                    localBar.setAttribute('height', localHeight);
+                    localBar.setAttribute('fill', 'url(#localGradient)');
+                    localBar.setAttribute('stroke', '#06b6d4');
+                    localBar.setAttribute('stroke-width', '1');
+                    svg.appendChild(localBar);
+
+                    // Pool Bar
+                    const poolHeight = (poolHash / maxHash) * chartHeight;
+                    const poolBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    poolBar.setAttribute('x', x + barWidth + 4);
+                    poolBar.setAttribute('y', height - padding.bottom - poolHeight);
+                    poolBar.setAttribute('width', barWidth);
+                    poolBar.setAttribute('height', poolHeight);
+                    poolBar.setAttribute('fill', 'url(#poolGradient)');
+                    poolBar.setAttribute('stroke', '#f59e0b');
+                    poolBar.setAttribute('stroke-width', '1');
+                    svg.appendChild(poolBar);
+
+                    // X Label
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', x + barWidth + 2);
+                    label.setAttribute('y', height - padding.bottom + 20);
+                    label.setAttribute('text-anchor', 'middle');
+                    label.setAttribute('fill', '#888');
+                    label.setAttribute('font-size', '12');
+                    label.textContent = miner;
+                    svg.appendChild(label);
+                });
+
+                // Legend
+                const legend = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
+                // Local Legend
+                const lRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                lRect.setAttribute('x', width - 200);
+                lRect.setAttribute('y', 20);
+                lRect.setAttribute('width', 12);
+                lRect.setAttribute('height', 12);
+                lRect.setAttribute('fill', '#06b6d4');
+                legend.appendChild(lRect);
+                
+                const lText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                lText.setAttribute('x', width - 180);
+                lText.setAttribute('y', 30);
+                lText.setAttribute('fill', '#ccc');
+                lText.setAttribute('font-size', '12');
+                lText.textContent = 'Local Hashrate';
+                legend.appendChild(lText);
+
+                // Pool Legend
+                const pRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                pRect.setAttribute('x', width - 90);
+                pRect.setAttribute('y', 20);
+                pRect.setAttribute('width', 12);
+                pRect.setAttribute('height', 12);
+                pRect.setAttribute('fill', '#f59e0b');
+                legend.appendChild(pRect);
+                
+                const pText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                pText.setAttribute('x', width - 70);
+                pText.setAttribute('y', 30);
+                pText.setAttribute('fill', '#ccc');
+                pText.setAttribute('font-size', '12');
+                pText.textContent = 'Pool Hashrate';
+                legend.appendChild(pText);
+
+                svg.appendChild(legend);
+            },
+
+            getMinerData(name) {
+                return this.data?.[name] || null;
+            },
+
+            renderStats() {
+                const miner = this.getMinerData(this.selectedMiner);
+                const grid = document.getElementById('statsGrid');
+                
+                if (!miner) {
+                    grid.innerHTML = '<div class="error">No data available for this miner</div>';
+                    return;
+                }
+
+                const stats = [
+                    { label: 'Hashrate', value: miner.hashrate_1m ? miner.hashrate_1m.toFixed(2) + ' TH/s' : 'N/A', icon: '⚡' },
+                    { label: 'Efficiency', value: miner.efficiency ? miner.efficiency.toFixed(1) + ' W/TH' : 'N/A', icon: '📊' },
+                    { label: 'Power', value: miner.power ? miner.power.toFixed(0) + ' W' : 'N/A', icon: '🔌' },
+                    { label: 'Uptime', value: miner.uptime ? miner.uptime.toFixed(1) + '%' : 'N/A', icon: '⏱️' },
+                    { label: 'Temperature', value: miner.temp ? miner.temp.toFixed(1) + '°C' : 'N/A', icon: '🌡️' },
+                    { label: 'Status', value: miner.alive ? '🟢 Online' : '🔴 Offline', icon: '📡' }
+                ];
+
+                grid.innerHTML = stats.map(stat => `
+                    <div class="stat-card">
+                        <div class="stat-icon">${stat.icon}</div>
+                        <div class="stat-label">${stat.label}</div>
+                        <div class="stat-value">${stat.value}</div>
+                    </div>
+                `).join('');
+            },
+
+            renderFleetStatus() {
+                // Legacy function - replaced by charts
+            },
+
+            renderPerformanceMetrics() {
+                // Legacy function - replaced by charts
+            },
+
+            renderSystemOverview() {
+                const container = document.getElementById('systemOverview');
+                if (!this.data) return;
+
+                const miners = Object.values(this.data);
+                const online = miners.filter(m => m.alive);
+                const offline = miners.filter(m => !m.alive);
+
+                let html = '<div>';
+                
+                if (offline.length > 0) {
+                    html += `<div class="metric-row"><span class="metric-label">🔴 Offline: ${offline.map(m => m.name).join(', ')}</span></div>`;
+                }
+
+                online.forEach(miner => {
+                    const tempStatus = miner.temp > 75 ? '🔴' : miner.temp > 65 ? '🟡' : '🟢';
+                    const hashrate = miner.hashrate_1m?.toFixed(2) || 'N/A';
+                    const temp = miner.temp?.toFixed(1) || 'N/A';
+                    html += `
+                        <div class="metric-row">
+                            <span class="metric-label">Miner ${miner.name} ${tempStatus}</span>
+                            <span class="metric-value">${hashrate} TH/s | ${temp}°C</span>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                container.innerHTML = html;
+            },
+
+            renderRecommendations() {
+                const container = document.getElementById('recommendations');
+                if (!this.data) return;
+
+                const miners = Object.values(this.data);
+                const online = miners.filter(m => m.alive);
+                const recommendations = [];
+
+                // Check for offline miners
+                const offline = miners.filter(m => !m.alive);
+                if (offline.length > 0) {
+                    recommendations.push(`🔴 ${offline.length} miner(s) offline - verify power and network`);
+                }
+
+                // Check for high temps
+                const highTemp = online.filter(m => m.temp > 75);
+                if (highTemp.length > 0) {
+                    recommendations.push(`🌡️ ${highTemp.length} miner(s) above 75°C - improve cooling/ventilation`);
+                }
+
+                // Check for low hashrate
+                const lowHash = online.filter(m => (m.hashrate_1m || 0) < 7);
+                if (lowHash.length > 0) {
+                    recommendations.push(`⚡ ${lowHash.length} miner(s) underperforming - check for throttling`);
+                }
+
+                // Check for high efficiency
+                const highEfficiency = online.filter(m => m.efficiency && m.efficiency > 45);
+                if (highEfficiency.length > 0) {
+                    recommendations.push(`💡 ${highEfficiency.length} miner(s) with high W/TH - consider tuning`);
+                }
+
+                // Positive feedback
+                if (recommendations.length === 0 && online.length > 0) {
+                    recommendations.push('✅ Fleet operating optimally - all systems nominal');
+                }
+
+                const html = recommendations.map(rec => `
+                    <div class="recommendation-item">${rec}</div>
+                `).join('');
+
+                container.innerHTML = html || '<div class="recommendation-item">No data available</div>';
+            }
+        };
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>

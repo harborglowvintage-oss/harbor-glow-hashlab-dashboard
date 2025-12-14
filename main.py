@@ -7,7 +7,10 @@ from typing import List, Dict, Any, Optional
 from collections import defaultdict
 from contextlib import suppress
 from time import time
+from dotenv import load_dotenv
+from luxor_api import get_luxor_data
 
+load_dotenv()
 
 def _env_flag(name: str, default: bool = True) -> bool:
     raw = os.getenv(name)
@@ -87,7 +90,9 @@ else:
 logger = logging.getLogger("hashlab")
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=secrets.token_hex(32))
+# Use a persistent secret key if available, otherwise generate one (which invalidates sessions on restart)
+secret_key = os.getenv("SESSION_SECRET_KEY", secrets.token_hex(32))
+app.add_middleware(SessionMiddleware, secret_key=secret_key)
 app.add_middleware(LANOnlyMiddleware)
 
 from miner_api import fetch_miner_stats
@@ -857,6 +862,13 @@ async def analytics_board(request: Request):
     return templates.TemplateResponse("charts.html", {"request": request})
 
 
+@app.get("/analytics/advanced")
+async def analytics_advanced(request: Request):
+    if not is_authenticated(request):
+        return RedirectResponse("/login", status_code=302)
+    return templates.TemplateResponse("advanced_analytics.html", {"request": request})
+
+
 @app.get("/analytics/claude")
 async def analytics_claude_widget(request: Request):
     if not is_authenticated(request):
@@ -1231,6 +1243,39 @@ async def miner_data(request: Request):
     except Exception as e:
         logger.warning(f"Failed to log metrics: {e}")
     return stats
+
+@app.get("/api/pool-comparison")
+async def pool_comparison_data(request: Request):
+    if not is_authenticated(request):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    
+    # Fetch local data
+    local_data = await gather_stats()
+    
+    # Fetch pool data
+    pool_data_raw = await get_luxor_data()
+    
+    # Process pool data
+    pool_miners = {}
+    if pool_data_raw:
+        for edge in pool_data_raw:
+            node = edge.get("node", {})
+            worker_name = node.get("workerName", "Unknown")
+            # Normalize worker name if needed (e.g., user.worker -> worker)
+            if "." in worker_name:
+                worker_name = worker_name.split(".")[-1]
+            
+            pool_miners[worker_name] = {
+                "hashrate": node.get("hashrate", 0),
+                "efficiency": node.get("efficiency", 0),
+                "updatedAt": node.get("updatedAt")
+            }
+            
+    return {
+        "local": local_data,
+        "pool": pool_miners,
+        "timestamp": time()
+    }
 
 
 @app.get("/historical-metrics")
