@@ -21,7 +21,7 @@ async def debug_luxor_connection():
         "api_key_preview": f"{api_key[:10]}...{api_key[-5:]}" if api_key else "NOT SET",
         "subaccount": subaccount,
         "base_url": LUXOR_BASE_URL,
-        "endpoint": f"{LUXOR_BASE_URL}/pool/workers/BTC",
+        "endpoint": f"{LUXOR_BASE_URL}/pool/BTC/workers",
     }
     
     # Test the connection
@@ -35,14 +35,14 @@ async def debug_luxor_connection():
     }
     
     params = {
-        "subaccount_names": subaccount,
+        "subaccount": subaccount,
         "status": "active",
         "limit": 10,  # Small limit for debug
     }
     
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            url = f"{LUXOR_BASE_URL}/pool/workers/BTC"
+            url = f"{LUXOR_BASE_URL}/pool/BTC/workers"
             response = await client.get(url, headers=headers, params=params)
         
         config["connection_status"] = f"SUCCESS: HTTP {response.status_code}"
@@ -69,7 +69,7 @@ async def get_luxor_data(api_key: str | None = None, subaccount: str | None = No
     Fetch worker data from the Luxor pool REST API v2 so the dashboard can
     compare local miner metrics to pool-side statistics.
     
-    Endpoint: /api/v2/pool/workers/BTC
+    Endpoint: /api/v2/pool/BTC/workers
     Returns worker hashrate, efficiency, and status for the specified subaccount.
     """
     api_key = api_key or os.getenv("LUXOR_API_KEY")
@@ -91,14 +91,14 @@ async def get_luxor_data(api_key: str | None = None, subaccount: str | None = No
     
     # Query parameters for filtering workers
     params = {
-        "subaccount_names": subaccount,
+        "subaccount": subaccount,
         "status": "active",
         "limit": 250,
     }
 
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            url = f"{LUXOR_BASE_URL}/pool/workers/BTC"
+            url = f"{LUXOR_BASE_URL}/pool/BTC/workers"
             response = await client.get(url, headers=headers, params=params)
 
         response.raise_for_status()
