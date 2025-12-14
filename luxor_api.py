@@ -4,7 +4,8 @@ import logging
 
 logger = logging.getLogger("luxor_api")
 
-# Updated to use REST API v1 endpoint per Luxor documentation
+# Luxor account configuration
+LUXOR_USERNAME = "harborglowvintage"
 LUXOR_BASE_URL = "https://app.luxor.tech/api/v1"
 
 async def get_luxor_data(api_key: str = None):
