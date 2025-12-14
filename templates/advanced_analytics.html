@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced Mining Analytics</title>
     <link rel="icon" type="image/png" href="/static/img/bolt.png">
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Chart.js Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -171,42 +175,53 @@
 
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(550px, 1fr));
+            gap: 24px;
             margin-bottom: 24px;
         }
 
         .chart-container {
             background-color: rgba(17, 24, 39, 0.6);
             border: 1px solid #1f2937;
-            border-radius: 8px;
-            padding: 20px;
-            min-height: 320px;
+            border-radius: 12px;
+            padding: 28px;
+            min-height: 420px;
             display: flex;
             flex-direction: column;
             backdrop-filter: blur(10px);
             transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .chart-container:hover {
             border-color: #06b6d4;
-            background-color: rgba(17, 24, 39, 0.9);
+            background-color: rgba(17, 24, 39, 0.95);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
         }
 
         .chart-title {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 700;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             color: #06b6d4;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
         }
 
         .chart-content {
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: center;
+            min-height: 350px;
+            position: relative;
+        }
+
+        /* Chart.js specific styling */
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
         }
 
         .metric-row {
@@ -424,56 +439,20 @@
         <!-- Charts Section -->
         <div class="charts-grid">
             <div class="chart-container">
-                <div class="chart-title">Hashrate Distribution</div>
+                <div class="chart-title">⚡ Hashrate Distribution (Local vs Pool)</div>
                 <div class="chart-content">
-                    <svg id="hashrateChart" viewBox="0 0 100 60" style="width: 100%; height: 200px;">
-                        <defs>
-                            <linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#10b981;stop-opacity:0.6" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
+                    <div class="chart-wrapper">
+                        <canvas id="hashrateChart"></canvas>
+                    </div>
                 </div>
             </div>
 
             <div class="chart-container">
-                <div class="chart-title">Temperature Status</div>
+                <div class="chart-title">📊 Power Efficiency Trend</div>
                 <div class="chart-content">
-                    <svg id="tempGauges" viewBox="0 0 200 100" style="width: 100%; height: 200px;">
-                        <defs>
-                            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <div class="chart-title">Power Efficiency Trend</div>
-                <div class="chart-content">
-                    <svg id="efficiencyChart" viewBox="0 0 300 150" style="width: 100%; height: 220px;">
-                        <defs>
-                            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
-                            </linearGradient>
-                            <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:0.3" />
-                                <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:0" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <div class="chart-title">Fleet Status Overview</div>
-                <div class="chart-content">
-                    <svg id="statusChart" viewBox="0 0 200 140" style="width: 100%; height: 220px;">
-                    </svg>
+                    <div class="chart-wrapper">
+                        <canvas id="efficiencyChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -568,7 +547,12 @@
             miners: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H-nerd'],
             selectedMiner: 'A',
             data: null,
+            poolData: {},
             refreshInterval: 10000,
+            charts: {
+                hashrate: null,
+                efficiency: null
+            },
 
             init() {
                 this.renderMinerSelector();
@@ -601,19 +585,11 @@
                             window.location.href = '/login';
                             return;
                         }
-                        // Fallback to old endpoint if new one fails
-                        const fallback = await fetch('/miner-data');
-                        if (fallback.ok) {
-                            this.data = await fallback.json();
-                            this.poolData = {};
-                            this.updateUI();
-                            return;
-                        }
                         throw new Error(`HTTP ${response.status}`);
                     }
                     const json = await response.json();
                     this.data = json.local;
-                    this.poolData = json.pool;
+                    this.poolData = json.pool || {};
                     this.updateUI();
                 } catch (error) {
                     console.error('Failed to load data:', error);
@@ -632,304 +608,267 @@
 
             renderCharts() {
                 this.renderHashrateChart();
-                this.renderTempGauges();
                 this.renderEfficiencyChart();
-                this.renderStatusChart();
             },
 
             renderHashrateChart() {
                 if (!this.data) return;
-                const svg = document.getElementById('hashrateChart');
-                svg.innerHTML = '<defs><linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" /><stop offset="100%" style="stop-color:#10b981;stop-opacity:0.6" /></linearGradient></defs>';
-                
-                const miners = Object.entries(this.data).slice(0, 8);
-                const maxHash = Math.max(...miners.map(([_, m]) => m.hashrate_1m || 0), 1);
-                const barWidth = 100 / miners.length;
-                const chartHeight = 50;
 
-                miners.forEach(([name, miner], i) => {
-                    const hash = miner.hashrate_1m || 0;
-                    const height = (hash / maxHash) * (chartHeight - 5);
-                    const x = i * barWidth + barWidth * 0.1;
-                    const y = chartHeight - height;
+                const ctx = document.getElementById('hashrateChart');
+                if (!ctx) return;
 
-                    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                    
-                    // Bar
-                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                    rect.setAttribute('class', 'chart-bar');
-                    rect.setAttribute('x', x);
-                    rect.setAttribute('y', y);
-                    rect.setAttribute('width', barWidth * 0.8);
-                    rect.setAttribute('height', height);
-                    g.appendChild(rect);
-
-                    // Label
-                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    label.setAttribute('class', 'chart-label');
-                    label.setAttribute('x', x + barWidth * 0.4);
-                    label.setAttribute('y', chartHeight + 2);
-                    label.setAttribute('text-anchor', 'middle');
-                    label.textContent = name;
-                    g.appendChild(label);
-
-                    // Value
-                    const value = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    value.setAttribute('class', 'chart-value');
-                    value.setAttribute('x', x + barWidth * 0.4);
-                    value.setAttribute('y', y - 1);
-                    value.setAttribute('text-anchor', 'middle');
-                    value.textContent = hash.toFixed(1);
-                    g.appendChild(value);
-
-                    svg.appendChild(g);
+                const miners = this.miners;
+                const localHashrates = miners.map(m => {
+                    const minerData = Object.values(this.data).find(d => d.name === m);
+                    return minerData?.hashrate_1m || 0;
                 });
-            },
 
-            renderTempGauges() {
-                if (!this.data) return;
-                const svg = document.getElementById('tempGauges');
-                svg.innerHTML = '<defs><linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" /><stop offset="100%" style="stop-color:#10b981;stop-opacity:1" /></linearGradient></defs>';
-                
-                const miners = Object.values(this.data).slice(0, 4);
-                const gaugeRadius = 18;
-                const circumference = 2 * Math.PI * gaugeRadius;
-                const tempThreshold = 80;
+                const poolHashrates = miners.map(m => {
+                    return (this.poolData[m]?.hashrate) || 0;
+                });
 
-                miners.forEach((miner, i) => {
-                    const cx = 50 + (i % 2) * 100;
-                    const cy = 35 + Math.floor(i / 2) * 60;
-                    const temp = miner.temp || 0;
-                    const progress = Math.min(temp / tempThreshold, 1);
-                    const offset = circumference * (1 - progress);
+                // Destroy previous chart if exists
+                if (this.charts.hashrate) {
+                    this.charts.hashrate.destroy();
+                }
 
-                    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-
-                    // Background circle
-                    const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                    bgCircle.setAttribute('class', 'gauge-circle');
-                    bgCircle.setAttribute('cx', cx);
-                    bgCircle.setAttribute('cy', cy);
-                    bgCircle.setAttribute('r', gaugeRadius);
-                    g.appendChild(bgCircle);
-
-                    // Progress circle
-                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                    circle.setAttribute('class', 'gauge-progress');
-                    circle.setAttribute('cx', cx);
-                    circle.setAttribute('cy', cy);
-                    circle.setAttribute('r', gaugeRadius);
-                    circle.setAttribute('stroke-dasharray', circumference);
-                    circle.setAttribute('stroke-dashoffset', offset);
-                    circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
-                    g.appendChild(circle);
-
-                    // Temperature text
-                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('class', 'gauge-text');
-                    text.setAttribute('x', cx);
-                    text.setAttribute('y', cy + 3);
-                    text.textContent = temp.toFixed(0) + '°';
-                    g.appendChild(text);
-
-                    // Miner name
-                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    label.setAttribute('class', 'gauge-label');
-                    label.setAttribute('x', cx);
-                    label.setAttribute('y', cy + 28);
-                    label.textContent = miner.name || '?';
-                    g.appendChild(label);
-
-                    svg.appendChild(g);
+                this.charts.hashrate = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: miners.map(m => `Miner ${m}`),
+                        datasets: [
+                            {
+                                label: 'Local Miners',
+                                data: localHashrates,
+                                backgroundColor: 'rgba(6, 182, 212, 0.8)',
+                                borderColor: '#06b6d4',
+                                borderWidth: 2,
+                                borderRadius: 6,
+                                borderSkipped: false,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.85,
+                            },
+                            {
+                                label: 'Luxor Pool',
+                                data: poolHashrates,
+                                backgroundColor: 'rgba(245, 158, 11, 0.8)',
+                                borderColor: '#f59e0b',
+                                borderWidth: 2,
+                                borderRadius: 6,
+                                borderSkipped: false,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.85,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#888',
+                                    font: { family: "'Space Mono', monospace", size: 13, weight: '600' },
+                                    padding: 16,
+                                    boxWidth: 14,
+                                    boxHeight: 14,
+                                    borderRadius: 3,
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                                borderColor: '#06b6d4',
+                                borderWidth: 1,
+                                titleColor: '#06b6d4',
+                                bodyColor: '#aaa',
+                                cornerRadius: 6,
+                                padding: 12,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' TH/s';
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                anchor: 'end',
+                                align: 'start',
+                                offset: 8,
+                                color: function(context) {
+                                    return context.dataset.borderColor;
+                                },
+                                font: {
+                                    family: "'Courier New', monospace",
+                                    size: 11,
+                                    weight: 'bold'
+                                },
+                                formatter: function(value) {
+                                    return value > 0 ? value.toFixed(2) + ' TH' : '';
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: false,
+                                grid: {
+                                    display: false,
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#888',
+                                    font: { family: "'Space Mono', monospace", size: 12, weight: '600' },
+                                    maxRotation: 45,
+                                    minRotation: 30,
+                                    padding: 8
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                stacked: false,
+                                title: {
+                                    display: true,
+                                    text: 'Hashrate (TH/s)',
+                                    color: '#06b6d4',
+                                    font: { family: "'Space Mono', monospace", size: 13, weight: 'bold' }
+                                },
+                                grid: {
+                                    color: 'rgba(31, 41, 55, 0.3)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#888',
+                                    font: { family: "'Courier New', monospace", size: 11, weight: 'bold' },
+                                    padding: 8,
+                                    callback: function(value) {
+                                        return value.toFixed(1);
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
                 });
             },
 
             renderEfficiencyChart() {
                 if (!this.data) return;
-                const svg = document.getElementById('efficiencyChart');
-                
+
+                const ctx = document.getElementById('efficiencyChart');
+                if (!ctx) return;
+
                 const miners = Object.values(this.data).slice(0, 8);
+                const labels = miners.map((_, i) => `T${i}`);
                 const efficiencies = miners.map(m => m.efficiency || 40);
-                const maxEff = Math.max(...efficiencies, 50);
-                const minEff = Math.min(...efficiencies, 30);
-                const range = maxEff - minEff || 1;
 
-                const padding = 20;
-                const width = 300 - 2 * padding;
-                const height = 150 - 2 * padding;
-
-                let pathData = `M ${padding}`;
-                const points = [];
-
-                efficiencies.forEach((eff, i) => {
-                    const x = padding + (i / (efficiencies.length - 1 || 1)) * width;
-                    const y = padding + height - ((eff - minEff) / range) * height;
-                    points.push({x, y, value: eff});
-                    if (i === 0) {
-                        pathData = `M ${x} ${y}`;
-                    } else {
-                        pathData += ` L ${x} ${y}`;
-                    }
-                });
-
-                // Add grid lines
-                for (let i = 0; i <= 4; i++) {
-                    const y = padding + (i / 4) * height;
-                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    line.setAttribute('class', 'chart-grid');
-                    line.setAttribute('x1', padding);
-                    line.setAttribute('x2', 300 - padding);
-                    line.setAttribute('y1', y);
-                    line.setAttribute('y2', y);
-                    svg.appendChild(line);
+                // Destroy previous chart if exists
+                if (this.charts.efficiency) {
+                    this.charts.efficiency.destroy();
                 }
 
-                // Area under curve
-                const area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                area.setAttribute('class', 'line-chart-area');
-                area.setAttribute('d', `${pathData} L ${300 - padding} ${padding + height} L ${padding} ${padding + height} Z`);
-                svg.appendChild(area);
-
-                // Line
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('class', 'line-chart-path');
-                path.setAttribute('d', pathData);
-                svg.appendChild(path);
-
-                // Data points
-                points.forEach((point, i) => {
-                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                    circle.setAttribute('class', 'chart-dot');
-                    circle.setAttribute('cx', point.x);
-                    circle.setAttribute('cy', point.y);
-                    svg.appendChild(circle);
-
-                    // Value label
-                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('class', 'chart-value');
-                    text.setAttribute('x', point.x);
-                    text.setAttribute('y', point.y - 8);
-                    text.setAttribute('text-anchor', 'middle');
-                    text.setAttribute('font-size', '10');
-                    text.textContent = point.value.toFixed(1);
-                    svg.appendChild(text);
+                this.charts.efficiency = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Power Efficiency (W/TH)',
+                            data: efficiencies,
+                            borderColor: '#06b6d4',
+                            backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: '#06b6d4',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointHoverBackgroundColor: '#10b981',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#888',
+                                    font: { family: "'Space Mono', monospace", size: 13, weight: '600' },
+                                    padding: 16,
+                                    boxWidth: 14,
+                                    boxHeight: 14,
+                                    borderRadius: 3,
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                                borderColor: '#06b6d4',
+                                borderWidth: 1,
+                                titleColor: '#06b6d4',
+                                bodyColor: '#aaa',
+                                cornerRadius: 6,
+                                padding: 12,
+                                callbacks: {
+                                    title: function(context) {
+                                        return 'Efficiency Reading ' + context[0].label;
+                                    },
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' W/TH';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false,
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#888',
+                                    font: { family: "'Space Mono', monospace", size: 11, weight: '600' },
+                                    padding: 8
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Watts per TH',
+                                    color: '#06b6d4',
+                                    font: { family: "'Space Mono', monospace", size: 13, weight: 'bold' }
+                                },
+                                grid: {
+                                    color: 'rgba(31, 41, 55, 0.3)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#888',
+                                    font: { family: "'Courier New', monospace", size: 11, weight: 'bold' },
+                                    padding: 8,
+                                    callback: function(value) {
+                                        return value.toFixed(0);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 });
-            },
-
-            renderStatusChart() {
-                if (!this.data) return;
-                const svg = document.getElementById('statusChart');
-                svg.innerHTML = '';
-
-                const miners = Object.values(this.data);
-                const online = miners.filter(m => m.alive).length;
-                const offline = miners.length - online;
-                const total = miners.length;
-
-                // Donut chart for online/offline
-                const radius = 35;
-                const cx = 60;
-                const cy = 50;
-                const circumference = 2 * Math.PI * radius;
-
-                // Offline segment
-                const offlineAngle = (offline / total) * circumference;
-                const circle1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle1.setAttribute('cx', cx);
-                circle1.setAttribute('cy', cy);
-                circle1.setAttribute('r', radius);
-                circle1.setAttribute('fill', 'none');
-                circle1.setAttribute('stroke', '#ef4444');
-                circle1.setAttribute('stroke-width', '8');
-                circle1.setAttribute('stroke-dasharray', `${offlineAngle} ${circumference}`);
-                circle1.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
-                svg.appendChild(circle1);
-
-                // Online segment
-                const onlineAngle = (online / total) * circumference;
-                const circle2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle2.setAttribute('cx', cx);
-                circle2.setAttribute('cy', cy);
-                circle2.setAttribute('r', radius);
-                circle2.setAttribute('fill', 'none');
-                circle2.setAttribute('stroke', '#10b981');
-                circle2.setAttribute('stroke-width', '8');
-                circle2.setAttribute('stroke-dasharray', `${onlineAngle} ${circumference}`);
-                circle2.setAttribute('stroke-dashoffset', -offlineAngle);
-                circle2.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
-                svg.appendChild(circle2);
-
-                // Center text
-                const text1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text1.setAttribute('x', cx);
-                text1.setAttribute('y', cy - 5);
-                text1.setAttribute('text-anchor', 'middle');
-                text1.setAttribute('class', 'gauge-text');
-                text1.setAttribute('font-size', '24');
-                text1.textContent = online;
-                svg.appendChild(text1);
-
-                const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text2.setAttribute('x', cx);
-                text2.setAttribute('y', cy + 12);
-                text2.setAttribute('text-anchor', 'middle');
-                text2.setAttribute('class', 'gauge-label');
-                text2.setAttribute('font-size', '12');
-                text2.textContent = 'Online';
-                svg.appendChild(text2);
-
-                // Legend
-                const legend1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                legend1.setAttribute('x', 115);
-                legend1.setAttribute('y', 30);
-                legend1.setAttribute('width', 10);
-                legend1.setAttribute('height', 10);
-                legend1.setAttribute('fill', '#10b981');
-                svg.appendChild(legend1);
-
-                const label1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                label1.setAttribute('x', 130);
-                label1.setAttribute('y', 39);
-                label1.setAttribute('class', 'chart-value');
-                label1.setAttribute('font-size', '12');
-                label1.textContent = `Online: ${online}`;
-                svg.appendChild(label1);
-
-                const legend2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                legend2.setAttribute('x', 115);
-                legend2.setAttribute('y', 50);
-                legend2.setAttribute('width', 10);
-                legend2.setAttribute('height', 10);
-                legend2.setAttribute('fill', '#ef4444');
-                svg.appendChild(legend2);
-
-                const label2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                label2.setAttribute('x', 130);
-                label2.setAttribute('y', 59);
-                label2.setAttribute('class', 'chart-value');
-                label2.setAttribute('font-size', '12');
-                label2.textContent = `Offline: ${offline}`;
-                svg.appendChild(label2);
-
-                const label3 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                label3.setAttribute('x', 130);
-                label3.setAttribute('y', 79);
-                label3.setAttribute('class', 'gauge-label');
-                label3.setAttribute('font-size', '11');
-                label3.textContent = `Uptime: ${((online/total)*100).toFixed(1)}%`;
-                svg.appendChild(label3);
             },
 
             renderPoolComparisonChart() {
                 if (!this.data) return;
                 const svg = document.getElementById('poolComparisonChart');
                 const chartContent = svg.querySelector('#chartContent');
-                chartContent.innerHTML = ''; // Clear previous bars
+                chartContent.innerHTML = '';
 
-                // Update stats cards
                 this.updatePoolComparisonStats();
 
-                // Check if pool data exists
                 const hasPoolData = this.poolData && Object.keys(this.poolData).length > 0;
                 
                 const miners = Object.keys(this.data).sort();
@@ -940,7 +879,6 @@
                 const chartWidth = width - padding.left - padding.right;
                 const chartHeight = height - padding.top - padding.bottom;
 
-                // Calculate max hashrate for scaling
                 let maxHash = 0;
                 miners.forEach(m => {
                     const local = this.data[m]?.hashrate_1m || 0;
@@ -952,7 +890,6 @@
                 const barWidth = (chartWidth / miners.length) * 0.35;
                 const groupWidth = chartWidth / miners.length;
 
-                // Draw Y-axis scale labels
                 for (let i = 0; i <= 5; i++) {
                     const y = height - padding.bottom - (i * chartHeight / 5);
                     const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -975,12 +912,236 @@
                     chartContent.appendChild(label);
                 }
 
-                // Draw bars with enhanced styling
                 miners.forEach((miner, i) => {
                     const localHash = this.data[miner]?.hashrate_1m || 0;
                     const poolHash = (hasPoolData && this.poolData && this.poolData[miner]?.hashrate) || 0;
                     
                     const x = padding.left + (i * groupWidth) + (groupWidth - barWidth * 2 - 8) / 2;
+                    
+                    const localHeight = (localHash / maxHash) * chartHeight;
+                    const localBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    localBar.setAttribute('x', x);
+                    localBar.setAttribute('y', height - padding.bottom - localHeight);
+                    localBar.setAttribute('width', barWidth);
+                    localBar.setAttribute('height', localHeight);
+                    localBar.setAttribute('fill', 'url(#localGradient)');
+                    localBar.setAttribute('stroke', '#06b6d4');
+                    localBar.setAttribute('stroke-width', '2');
+                    localBar.setAttribute('filter', 'url(#glow)');
+                    localBar.setAttribute('class', 'chart-bar');
+                    chartContent.appendChild(localBar);
+
+                    const localLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    localLabel.setAttribute('x', x + barWidth / 2);
+                    localLabel.setAttribute('y', height - padding.bottom - localHeight - 8);
+                    localLabel.setAttribute('text-anchor', 'middle');
+                    localLabel.setAttribute('fill', '#06b6d4');
+                    localLabel.setAttribute('font-size', '10');
+                    localLabel.setAttribute('font-weight', 'bold');
+                    localLabel.textContent = localHash.toFixed(1);
+                    chartContent.appendChild(localLabel);
+
+                    if (hasPoolData && poolHash > 0) {
+                        const poolHeight = (poolHash / maxHash) * chartHeight;
+                        const poolBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        poolBar.setAttribute('x', x + barWidth + 8);
+                        poolBar.setAttribute('y', height - padding.bottom - poolHeight);
+                        poolBar.setAttribute('width', barWidth);
+                        poolBar.setAttribute('height', poolHeight);
+                        poolBar.setAttribute('fill', 'url(#poolGradient)');
+                        poolBar.setAttribute('stroke', '#f59e0b');
+                        poolBar.setAttribute('stroke-width', '2');
+                        poolBar.setAttribute('filter', 'url(#glow)');
+                        poolBar.setAttribute('class', 'chart-bar');
+                        chartContent.appendChild(poolBar);
+
+                        const poolLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        poolLabel.setAttribute('x', x + barWidth + 8 + barWidth / 2);
+                        poolLabel.setAttribute('y', height - padding.bottom - poolHeight - 8);
+                        poolLabel.setAttribute('text-anchor', 'middle');
+                        poolLabel.setAttribute('fill', '#f59e0b');
+                        poolLabel.setAttribute('font-size', '10');
+                        poolLabel.setAttribute('font-weight', 'bold');
+                        poolLabel.textContent = poolHash.toFixed(1);
+                        chartContent.appendChild(poolLabel);
+                    }
+
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', x + barWidth + 4);
+                    label.setAttribute('y', height - padding.bottom + 25);
+                    label.setAttribute('text-anchor', 'middle');
+                    label.setAttribute('fill', '#888');
+                    label.setAttribute('font-size', '13');
+                    label.setAttribute('font-weight', 'bold');
+                    label.textContent = miner;
+                    chartContent.appendChild(label);
+                });
+
+                if (!hasPoolData) {
+                    const statusRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    statusRect.setAttribute('x', width - 280);
+                    statusRect.setAttribute('y', 15);
+                    statusRect.setAttribute('width', 265);
+                    statusRect.setAttribute('height', 25);
+                    statusRect.setAttribute('fill', 'rgba(239, 68, 68, 0.1)');
+                    statusRect.setAttribute('stroke', '#ef4444');
+                    statusRect.setAttribute('stroke-width', '1.5');
+                    statusRect.setAttribute('rx', '4');
+                    chartContent.appendChild(statusRect);
+
+                    const statusText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    statusText.setAttribute('x', width - 280 + 8);
+                    statusText.setAttribute('y', 33);
+                    statusText.setAttribute('fill', '#ef4444');
+                    statusText.setAttribute('font-size', '11');
+                    statusText.setAttribute('font-weight', 'bold');
+                    statusText.textContent = '⚠️ Luxor data unavailable - Local data only';
+                    chartContent.appendChild(statusText);
+                }
+            },
+
+            updatePoolComparisonStats() {
+                let localTotal = 0;
+                let poolTotal = 0;
+                let matchedMiners = 0;
+
+                Object.keys(this.data).forEach(miner => {
+                    localTotal += this.data[miner]?.hashrate_1m || 0;
+                    if (this.poolData && this.poolData[miner]) {
+                        poolTotal += this.poolData[miner].hashrate || 0;
+                        matchedMiners++;
+                    }
+                });
+
+                const localCard = document.getElementById('localHashrateTotal');
+                const poolCard = document.getElementById('poolHashrateTotal');
+                const diffCard = document.getElementById('hashrateDifference');
+                const varCard = document.getElementById('hashrateVariance');
+                const statusCard = document.getElementById('poolStatus');
+
+                if (localCard) localCard.textContent = localTotal.toFixed(2) + ' TH/s';
+                if (poolCard) poolCard.textContent = poolTotal.toFixed(2) + ' TH/s';
+                
+                const difference = Math.abs(localTotal - poolTotal);
+                const variance = localTotal > 0 ? ((difference / localTotal) * 100) : 0;
+                
+                if (diffCard) diffCard.textContent = difference.toFixed(2) + ' TH/s';
+                if (varCard) varCard.textContent = variance.toFixed(1) + '%';
+                
+                if (statusCard) {
+                    if (poolTotal > 0) {
+                        statusCard.style.color = '#10b981';
+                        statusCard.textContent = '✓ Pool data active - ' + matchedMiners + ' miners matched';
+                    } else {
+                        statusCard.style.color = '#f59e0b';
+                        statusCard.textContent = '⚠️ Awaiting Luxor API response...';
+                    }
+                }
+            },
+
+            getMinerData(name) {
+                return Object.values(this.data || {}).find(m => m.name === name) || null;
+            },
+
+            renderStats() {
+                const miner = this.getMinerData(this.selectedMiner);
+                const grid = document.getElementById('statsGrid');
+                
+                if (!miner) {
+                    grid.innerHTML = '<div class="error">No data available for this miner</div>';
+                    return;
+                }
+
+                const stats = [
+                    { label: 'Hashrate', value: miner.hashrate_1m ? miner.hashrate_1m.toFixed(2) + ' TH/s' : 'N/A', icon: '⚡' },
+                    { label: 'Efficiency', value: miner.efficiency ? miner.efficiency.toFixed(1) + ' W/TH' : 'N/A', icon: '📊' },
+                    { label: 'Power', value: miner.power ? miner.power.toFixed(0) + ' W' : 'N/A', icon: '🔌' },
+                    { label: 'Uptime', value: miner.uptime ? miner.uptime.toFixed(1) + '%' : 'N/A', icon: '⏱️' },
+                    { label: 'Temperature', value: miner.temp ? miner.temp.toFixed(1) + '°C' : 'N/A', icon: '🌡️' },
+                    { label: 'Status', value: miner.alive ? '🟢 Online' : '🔴 Offline', icon: '📡' }
+                ];
+
+                grid.innerHTML = stats.map(stat => `
+                    <div class="stat-card">
+                        <div class="stat-icon">${stat.icon}</div>
+                        <div class="stat-label">${stat.label}</div>
+                        <div class="stat-value">${stat.value}</div>
+                    </div>
+                `).join('');
+            },
+
+            renderSystemOverview() {
+                const container = document.getElementById('systemOverview');
+                if (!this.data) return;
+
+                const miners = Object.values(this.data);
+                const online = miners.filter(m => m.alive);
+                const offline = miners.filter(m => !m.alive);
+
+                let html = '<div>';
+                
+                if (offline.length > 0) {
+                    html += `<div class="metric-row"><span class="metric-label">🔴 Offline: ${offline.map(m => m.name).join(', ')}</span></div>`;
+                }
+
+                online.forEach(miner => {
+                    const tempStatus = miner.temp > 75 ? '🔴' : miner.temp > 65 ? '🟡' : '🟢';
+                    const hashrate = miner.hashrate_1m?.toFixed(2) || 'N/A';
+                    const temp = miner.temp?.toFixed(1) || 'N/A';
+                    html += `
+                        <div class="metric-row">
+                            <span class="metric-label">Miner ${miner.name} ${tempStatus}</span>
+                            <span class="metric-value">${hashrate} TH/s | ${temp}°C</span>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                container.innerHTML = html;
+            },
+
+            renderRecommendations() {
+                const container = document.getElementById('recommendations');
+                if (!this.data) return;
+
+                const miners = Object.values(this.data);
+                const online = miners.filter(m => m.alive);
+                const recommendations = [];
+
+                const offline = miners.filter(m => !m.alive);
+                if (offline.length > 0) {
+                    recommendations.push(`🔴 ${offline.length} miner(s) offline - verify power and network`);
+                }
+
+                const highTemp = online.filter(m => m.temp > 75);
+                if (highTemp.length > 0) {
+                    recommendations.push(`🌡️ ${highTemp.length} miner(s) above 75°C - improve cooling/ventilation`);
+                }
+
+                const lowHash = online.filter(m => (m.hashrate_1m || 0) < 7);
+                if (lowHash.length > 0) {
+                    recommendations.push(`⚡ ${lowHash.length} miner(s) underperforming - check for throttling`);
+                }
+
+                const highEfficiency = online.filter(m => m.efficiency && m.efficiency > 45);
+                if (highEfficiency.length > 0) {
+                    recommendations.push(`💡 ${highEfficiency.length} miner(s) with high W/TH - consider tuning`);
+                }
+
+                if (recommendations.length === 0 && online.length > 0) {
+                    recommendations.push('✅ Fleet operating optimally - all systems nominal');
+                }
+
+                const html = recommendations.map(rec => `
+                    <div class="recommendation-item">${rec}</div>
+                `).join('');
+
+                container.innerHTML = html || '<div class="recommendation-item">No data available</div>';
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
                     
                     // Local Bar with glow
                     const localHeight = (localHash / maxHash) * chartHeight;
